@@ -46,7 +46,8 @@ public class Patient {
 
     public Patient() {}
 
-    public Patient(String fullName, String email, String phone, LocalDate dob, Gender gender, String address) {
+    public Patient(UUID id, String fullName, String email, String phone, LocalDate dob, Gender gender, String address) {
+        this.id = id;
         this.fullName = fullName;
         this.email = email;
         this.phone = phone;

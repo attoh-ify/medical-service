@@ -1,7 +1,6 @@
 package org.health.medical_service.entities;
 
 import jakarta.persistence.*;
-import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -36,10 +35,8 @@ public class Appointment {
     @Enumerated(EnumType.STRING)
     private AppointmentType appointmentType;
 
-    @OneToOne
-    @JoinColumn(name = "follow_up_appointment_id")
-    @ToString.Exclude
-    private Appointment followUpAppointment;
+    @Column(nullable = true, unique = true)
+    private UUID followUpAppointmentId;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -49,14 +46,15 @@ public class Appointment {
 
     public Appointment() {}
 
-    public Appointment(Patient patient, Doctor doctor, LocalDateTime appointmentTime, AppointmentStatus status, String result, AppointmentType appointmentType, Appointment followUpAppointment) {
+    public Appointment(UUID id, Patient patient, Doctor doctor, LocalDateTime appointmentTime, AppointmentStatus status, String result, AppointmentType appointmentType, UUID followUpAppointmentId) {
+        this.id = id;
         this.patient = patient;
         this.doctor = doctor;
         this.appointmentTime = appointmentTime;
         this.status = status;
         this.result = result;
         this.appointmentType = appointmentType;
-        this.followUpAppointment = followUpAppointment;
+        this.followUpAppointmentId = followUpAppointmentId;
     }
 
     @PrePersist
@@ -126,12 +124,12 @@ public class Appointment {
         this.appointmentType = appointmentType;
     }
 
-    public Appointment getFollowUpAppointment() {
-        return followUpAppointment;
+    public UUID getFollowUpAppointmentId() {
+        return followUpAppointmentId;
     }
 
-    public void setFollowUpAppointment(Appointment followUpAppointment) {
-        this.followUpAppointment = followUpAppointment;
+    public void setFollowUpAppointment(UUID followUpAppointmentId) {
+        this.followUpAppointmentId = followUpAppointmentId;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -152,7 +150,7 @@ public class Appointment {
                 ", status=" + status +
                 ", result='" + result + '\'' +
                 ", appointmentType=" + appointmentType +
-                ", followUpAppointmentId=" + (followUpAppointment != null ? followUpAppointment.getId() : null) +
+                ", followUpAppointmentId=" + followUpAppointmentId +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 '}';

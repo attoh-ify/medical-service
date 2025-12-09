@@ -19,7 +19,7 @@ public class DoctorAvailability {
 
     @Column(updatable = false, nullable = false)
     @Enumerated(EnumType.STRING)
-    private DayOfTheWeek dayOfTheWeek;
+    private DayOfTheWeek day;
 
     @Column(updatable = false, nullable = false)
     private LocalDateTime startTime;
@@ -35,12 +35,13 @@ public class DoctorAvailability {
 
     public DoctorAvailability() {}
 
-    public DoctorAvailability(Doctor doctor, DayOfTheWeek dayOfTheWeek, LocalDateTime startTime, LocalDateTime endTime) {
+    public DoctorAvailability(UUID id, Doctor doctor, DayOfTheWeek day, LocalDateTime startTime, LocalDateTime endTime, boolean isBooked) {
+        this.id = id;
         this.doctor = doctor;
-        this.dayOfTheWeek = dayOfTheWeek;
+        this.day = day;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.isBooked = false;
+        this.isBooked = isBooked;
     }
 
     @PrePersist
@@ -56,8 +57,8 @@ public class DoctorAvailability {
         return doctor;
     }
 
-    public DayOfTheWeek getDayOfTheWeek() {
-        return dayOfTheWeek;
+    public DayOfTheWeek getDay() {
+        return day;
     }
 
     public LocalDateTime getStartTime() {
@@ -81,7 +82,7 @@ public class DoctorAvailability {
         return "DoctorAvailability{" +
                 "id=" + id +
                 ", doctorId=" + (doctor != null ? doctor.getId() : null) +
-                ", dayOfTheWeek=" + dayOfTheWeek +
+                ", day=" + day +
                 ", startTime='" + startTime + '\'' +
                 ", endTime='" + endTime + '\'' +
                 ", isBooked=" + isBooked +

@@ -43,12 +43,15 @@ public class Doctor {
 
     public Doctor() {}
 
-    public Doctor(String fullName, String email, String phone, String specialization, String bio) {
+    public Doctor(UUID id, String fullName, String email, String phone, String specialization, String bio, List<DoctorAvailability> doctorAvailabilities, List<Appointment> appointments) {
+        this.id = id;
         this.fullName = fullName;
         this.email = email;
         this.phone = phone;
         this.specialization = specialization;
         this.bio = bio;
+        this.doctorAvailabilities = doctorAvailabilities;
+        this.appointments = appointments;
     }
 
     @PrePersist

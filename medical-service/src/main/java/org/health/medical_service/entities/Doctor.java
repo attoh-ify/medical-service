@@ -32,7 +32,7 @@ public class Doctor {
     @OneToMany(mappedBy = "doctor", cascade = {CascadeType.REMOVE, CascadeType.PERSIST})
     private List<DoctorAvailability> doctorAvailabilities;
 
-    @OneToMany(mappedBy = "doctor", cascade = {CascadeType.REMOVE, CascadeType.PERSIST})
+    @OneToMany(mappedBy = "doctor", cascade = {CascadeType.PERSIST})
     private List<Appointment> appointments;
 
     @Column(name = "created_at", nullable = false)
@@ -135,21 +135,5 @@ public class Doctor {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    @Override
-    public String toString() {
-        return "Doctor{" +
-                "id=" + id +
-                ", fullName='" + fullName + '\'' +
-                ", email='" + email + '\'' +
-                ", phone='" + phone + '\'' +
-                ", specialization='" + specialization + '\'' +
-                ", bio='" + bio + '\'' +
-                ", doctorAvailabilities=" + doctorAvailabilities +
-                ", appointments=" + appointments +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
     }
 }

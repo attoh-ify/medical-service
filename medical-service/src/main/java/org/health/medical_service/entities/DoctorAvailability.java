@@ -76,17 +76,4 @@ public class DoctorAvailability {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
-
-    @Override
-    public String toString() {
-        return "DoctorAvailability{" +
-                "id=" + id +
-                ", doctorId=" + (doctor != null ? doctor.getId() : null) +
-                ", day=" + day +
-                ", startTime='" + startTime + '\'' +
-                ", endTime='" + endTime + '\'' +
-                ", isBooked=" + isBooked +
-                ", createdAt=" + createdAt +
-                '}';
-    }
 }

@@ -139,20 +139,4 @@ public class Appointment {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
-
-    @Override
-    public String toString() {
-        return "Appointment{" +
-                "id=" + id +
-                ", patientId=" + (patient != null ? patient.getId() : null) +
-                ", doctorId=" + (doctor != null ? doctor.getId() : null) +
-                ", appointmentTime=" + appointmentTime +
-                ", status=" + status +
-                ", result='" + result + '\'' +
-                ", appointmentType=" + appointmentType +
-                ", followUpAppointmentId=" + followUpAppointmentId +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
-    }
 }

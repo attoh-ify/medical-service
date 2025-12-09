@@ -1,6 +1,8 @@
 package org.health.medical_service.entities;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -8,7 +10,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "patients")
+@Table(
+        name = "patients",
+        indexes = {
+                @Index(name = "idx_email", columnList = "email"),
+        }
+)
 public class Patient {
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -34,13 +41,14 @@ public class Patient {
     @Column(name = "address", nullable = false)
     private String address;
 
-    @OneToMany(mappedBy = "patient", cascade = {CascadeType.REMOVE, CascadeType.PERSIST})
-    @Column()
+    @OneToMany(mappedBy = "patient", cascade = {CascadeType.PERSIST})
     private List<Appointment> appointments;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
@@ -54,17 +62,6 @@ public class Patient {
         this.dob = dob;
         this.gender = gender;
         this.address = address;
-    }
-
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = this.createdAt;
-    }
-
-    @PreUpdate
-    public void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
     }
 
     public UUID getId() {
@@ -145,21 +142,5 @@ public class Patient {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    @Override
-    public String toString() {
-        return "Patient{" +
-                "id=" + id +
-                ", fullName='" + fullName + '\'' +
-                ", email='" + email + '\'' +
-                ", phone='" + phone + '\'' +
-                ", dob=" + dob +
-                ", gender=" + gender +
-                ", address='" + address + '\'' +
-                ", appointments=" + appointments +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                '}';
     }
 }

@@ -24,7 +24,8 @@ public class Doctor {
     private String phone;
 
     @Column(name = "specialization", nullable = false)
-    private String specialization;
+    @Enumerated(EnumType.STRING)
+    private Specialization specialization;
 
     @Column(name = "bio", nullable = false)
     private String bio;
@@ -43,7 +44,7 @@ public class Doctor {
 
     public Doctor() {}
 
-    public Doctor(UUID id, String fullName, String email, String phone, String specialization, String bio, List<DoctorAvailability> doctorAvailabilities, List<Appointment> appointments) {
+    public Doctor(UUID id, String fullName, String email, String phone, Specialization specialization, String bio, List<DoctorAvailability> doctorAvailabilities, List<Appointment> appointments) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;
@@ -97,11 +98,11 @@ public class Doctor {
         this.phone = phone;
     }
 
-    public String getSpecialization() {
+    public Specialization getSpecialization() {
         return specialization;
     }
 
-    public void setSpecialization(String specialization) {
+    public void setSpecialization(Specialization specialization) {
         this.specialization = specialization;
     }
 

@@ -3,6 +3,7 @@ package org.health.medical_service.entities;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
@@ -22,10 +23,10 @@ public class DoctorAvailability {
     private DayOfTheWeek day;
 
     @Column(updatable = false, nullable = false)
-    private LocalDateTime startTime;
+    private LocalTime startTime;
 
     @Column(updatable = false, nullable = false)
-    private LocalDateTime endTime;
+    private LocalTime endTime;
 
     @Column(nullable = false)
     private boolean isBooked;
@@ -35,7 +36,7 @@ public class DoctorAvailability {
 
     public DoctorAvailability() {}
 
-    public DoctorAvailability(UUID id, Doctor doctor, DayOfTheWeek day, LocalDateTime startTime, LocalDateTime endTime, boolean isBooked) {
+    public DoctorAvailability(UUID id, Doctor doctor, DayOfTheWeek day, LocalTime startTime, LocalTime endTime, boolean isBooked) {
         this.id = id;
         this.doctor = doctor;
         this.day = day;
@@ -61,11 +62,11 @@ public class DoctorAvailability {
         return day;
     }
 
-    public LocalDateTime getStartTime() {
+    public LocalTime getStartTime() {
         return startTime;
     }
 
-    public LocalDateTime getEndTime() {
+    public LocalTime getEndTime() {
         return endTime;
     }
 

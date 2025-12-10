@@ -43,6 +43,23 @@ public class DoctorMapperImpl implements DoctorMapper {
 
     @Override
     public DoctorDto toDto(Doctor doctor) {
-        return null;
+        return new DoctorDto(
+                doctor.getId(),
+                doctor.getFullName(),
+                doctor.getEmail(),
+                doctor.getPhone(),
+                doctor.getSpecialization(),
+                doctor.getBio(),
+                Optional.ofNullable(doctor.getDoctorAvailabilities())
+                        .map(doctorAvailabilities -> doctorAvailabilities.stream()
+                                .map(doctorAvailabilityMapper::toDto)
+                                .toList())
+                        .orElse(null),
+                Optional.ofNullable(doctor.getAppointments())
+                        .map(appointments -> appointments.stream()
+                                .map(appointmentMapper::toDto)
+                                .toList())
+                        .orElse(null)
+        );
     }
 }

@@ -9,7 +9,6 @@ public record DoctorAvailabilityDto(
         UUID id,
         DayOfTheWeek day,
         LocalTime startTime,
-        LocalTime endTime,
-        boolean isBooked
+        LocalTime endTime
 ) {
 }

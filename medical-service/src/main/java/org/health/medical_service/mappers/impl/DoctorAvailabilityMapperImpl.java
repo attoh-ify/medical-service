@@ -14,8 +14,7 @@ public class DoctorAvailabilityMapperImpl implements DoctorAvailabilityMapper {
                 null,
                 doctorAvailabilityDto.day(),
                 doctorAvailabilityDto.startTime(),
-                doctorAvailabilityDto.endTime(),
-                doctorAvailabilityDto.isBooked()
+                doctorAvailabilityDto.endTime()
         );
     }
 
@@ -25,8 +24,7 @@ public class DoctorAvailabilityMapperImpl implements DoctorAvailabilityMapper {
                 doctorAvailability.getId(),
                 doctorAvailability.getDay(),
                 doctorAvailability.getStartTime(),
-                doctorAvailability.getEndTime(),
-                doctorAvailability.isBooked()
+                doctorAvailability.getEndTime()
         );
     }
 }

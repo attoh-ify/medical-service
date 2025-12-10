@@ -18,31 +18,27 @@ public class DoctorAvailability {
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
 
-    @Column(updatable = false, nullable = false)
+    @Column(updatable = false, unique = true, nullable = false)
     @Enumerated(EnumType.STRING)
     private DayOfTheWeek day;
 
-    @Column(updatable = false, nullable = false)
+    @Column(nullable = false)
     private LocalTime startTime;
 
-    @Column(updatable = false, nullable = false)
-    private LocalTime endTime;
-
     @Column(nullable = false)
-    private boolean isBooked;
+    private LocalTime endTime;
 
     @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
     public DoctorAvailability() {}
 
-    public DoctorAvailability(UUID id, Doctor doctor, DayOfTheWeek day, LocalTime startTime, LocalTime endTime, boolean isBooked) {
+    public DoctorAvailability(UUID id, Doctor doctor, DayOfTheWeek day, LocalTime startTime, LocalTime endTime) {
         this.id = id;
         this.doctor = doctor;
         this.day = day;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.isBooked = isBooked;
     }
 
     @PrePersist
@@ -68,10 +64,6 @@ public class DoctorAvailability {
 
     public LocalTime getEndTime() {
         return endTime;
-    }
-
-    public boolean isBooked() {
-        return isBooked;
     }
 
     public LocalDateTime getCreatedAt() {

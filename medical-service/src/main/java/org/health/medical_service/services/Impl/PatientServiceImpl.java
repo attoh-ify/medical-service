@@ -1,20 +1,35 @@
 package org.health.medical_service.services.Impl;
 
-import org.health.medical_service.entities.Patient;
+import org.health.medical_service.dto.DayGroupedAvailabilityResponse;
+import org.health.medical_service.dto.DoctorDailySlotResponse;
+import org.health.medical_service.dto.TimeRange;
+import org.health.medical_service.entities.*;
+import org.health.medical_service.repositories.AppointmentRepository;
+import org.health.medical_service.repositories.DoctorAvailabilityRepository;
+import org.health.medical_service.repositories.DoctorRepository;
 import org.health.medical_service.repositories.PatientRepository;
 import org.health.medical_service.services.PatientService;
 import org.springframework.stereotype.Service;
 import org.health.medical_service.utils.helpers;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class PatientServiceImpl implements PatientService {
     private final PatientRepository patientRepository;
+    private final DoctorRepository doctorRepository;
+    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+    private final AppointmentRepository appointmentRepository;
 
-    public PatientServiceImpl(PatientRepository patientRepository) {
+    public PatientServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, DoctorAvailabilityRepository doctorAvailabilityRepository, AppointmentRepository appointmentRepository) {
         this.patientRepository = patientRepository;
+        this.doctorRepository = doctorRepository;
+        this.doctorAvailabilityRepository = doctorAvailabilityRepository;
+        this.appointmentRepository = appointmentRepository;
     }
 
     @Override
@@ -30,6 +45,60 @@ public class PatientServiceImpl implements PatientService {
             throw new IllegalArgumentException("Patient with this email is not registered with us");
         }
         return patient;
+    }
+
+    @Override
+    public List<DayGroupedAvailabilityResponse> getAvailableDoctors(
+            Specialization specialization,
+            DayOfTheWeek requestedDay,
+            String doctorFullName
+    ) {
+        List<Doctor> doctors = doctorRepository.searchDoctors(specialization, requestedDay, doctorFullName);
+        List<DayGroupedAvailabilityResponse> finalResponse = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+
+        for (int i = 0; i < 14; i++) {
+            LocalDate date = today.plusDays(i);
+            DayOfTheWeek dow = DayOfTheWeek.valueOf(date.getDayOfWeek().name());
+
+            // If user explicitly requested a day, skip other days
+            if (requestedDay != null && requestedDay != dow) continue;
+
+            List<DoctorDailySlotResponse> doctorsForThisDay = new ArrayList<>();
+
+            for (Doctor doctor : doctors) {
+
+                boolean worksToday = doctor.getDoctorAvailabilities()
+                        .stream()
+                        .anyMatch(a -> a.getDay() == dow);
+
+                if (!worksToday) continue;
+
+                int totalBookedHours = helpers.computeTotalBookedHours(doctor, date);
+                List<TimeRange> freeRanges = helpers.calculateFreeTimeRanges(doctor, date, 70);
+
+                // If doctor is working but has no free time, still include him
+                doctorsForThisDay.add(new DoctorDailySlotResponse(
+                        doctor.getId(),
+                        doctor.getFullName(),
+                        totalBookedHours,
+                        freeRanges
+                ));
+            }
+
+            // Skip this date if no doctor works on this date
+            if (!doctorsForThisDay.isEmpty()) {
+                finalResponse.add(new DayGroupedAvailabilityResponse(date, doctorsForThisDay));
+            }
+        }
+
+        return finalResponse;
+    }
+
+    @Override
+    public Appointment bookAppointment(UUID patientId, UUID doctorId, UUID doctorAvailabilityId, AppointmentType appointmentType) {
+        return null;
     }
 
     private void validatePatient(Patient p) {

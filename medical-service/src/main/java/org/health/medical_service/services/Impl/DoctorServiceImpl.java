@@ -39,8 +39,7 @@ public class DoctorServiceImpl implements DoctorService {
                         doctor,
                         doctorAvailability.getDay(),
                         doctorAvailability.getStartTime(),
-                        doctorAvailability.getEndTime(),
-                        false
+                        doctorAvailability.getEndTime()
                 )
         );
     }
@@ -66,7 +65,7 @@ public class DoctorServiceImpl implements DoctorService {
         if (d.getId() != null) throw new IllegalArgumentException("Doctor availability ID is system generated");
         Optional<Doctor> doctor = doctorRepository.findById(doctorId);
         if (doctor.isEmpty()) {
-            throw new IllegalArgumentException("This phone is already registered to a doctor.");
+            throw new IllegalArgumentException("Doctor not found.");
         }
         if (d.getDay() == null) throw new IllegalArgumentException("Day of the week is required.");
         if (d.getStartTime() == null) throw new IllegalArgumentException("Start time is required.");

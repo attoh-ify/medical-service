@@ -1,10 +1,15 @@
 package org.health.medical_service.services;
 
-import org.health.medical_service.entities.Patient;
+import org.health.medical_service.dto.DayGroupedAvailabilityResponse;
+import org.health.medical_service.entities.*;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface PatientService {
     Patient registerPatient(Patient patient);
     Optional<Patient> getPatientDetails(String email);
+    List<DayGroupedAvailabilityResponse> getAvailableDoctors(Specialization specialization, DayOfTheWeek day, String doctorFullName);
+    Appointment bookAppointment(UUID patientId, UUID doctorId, UUID doctorAvailabilityId, AppointmentType appointmentType);
 }

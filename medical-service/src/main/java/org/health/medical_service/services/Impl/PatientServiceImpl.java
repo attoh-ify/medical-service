@@ -2,10 +2,10 @@ package org.health.medical_service.services.Impl;
 
 import org.health.medical_service.dto.DayGroupedAvailabilityResponse;
 import org.health.medical_service.dto.DoctorDailySlotResponse;
+import org.health.medical_service.dto.RequestAppointmentDto;
 import org.health.medical_service.dto.TimeRange;
 import org.health.medical_service.entities.*;
 import org.health.medical_service.repositories.AppointmentRepository;
-import org.health.medical_service.repositories.DoctorAvailabilityRepository;
 import org.health.medical_service.repositories.DoctorRepository;
 import org.health.medical_service.repositories.PatientRepository;
 import org.health.medical_service.services.PatientService;
@@ -13,22 +13,20 @@ import org.springframework.stereotype.Service;
 import org.health.medical_service.utils.helpers;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class PatientServiceImpl implements PatientService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
-    private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final AppointmentRepository appointmentRepository;
 
-    public PatientServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, DoctorAvailabilityRepository doctorAvailabilityRepository, AppointmentRepository appointmentRepository) {
+    public PatientServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, AppointmentRepository appointmentRepository) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
-        this.doctorAvailabilityRepository = doctorAvailabilityRepository;
         this.appointmentRepository = appointmentRepository;
     }
 
@@ -76,7 +74,7 @@ public class PatientServiceImpl implements PatientService {
                 if (!worksToday) continue;
 
                 int totalBookedHours = helpers.computeTotalBookedHours(doctor, date);
-                List<TimeRange> freeRanges = helpers.calculateFreeTimeRanges(doctor, date, 70);
+                List<TimeRange> freeRanges = helpers.calculateFreeTimeRanges(doctor, date, 60);
 
                 // If doctor is working but has no free time, still include him
                 doctorsForThisDay.add(new DoctorDailySlotResponse(
@@ -97,8 +95,45 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public Appointment bookAppointment(UUID patientId, UUID doctorId, UUID doctorAvailabilityId, AppointmentType appointmentType) {
-        return null;
+    public Appointment bookAppointment(RequestAppointmentDto dto) {
+        Patient patient = patientRepository.findByEmail(dto.patientEmail()).orElseThrow(() -> new IllegalArgumentException("Patient not found."));
+        Doctor doctor = doctorRepository.findById(dto.doctorId()).orElseThrow(() -> new IllegalArgumentException("Doctor not found."));
+        List<TimeRange> freeRanges = helpers.calculateFreeTimeRanges(doctor, dto.appointmentTime().toLocalDate(), 60);
+        
+        validateAppointmentTime(dto.appointmentTime(), freeRanges);
+
+        return appointmentRepository.save(
+                new Appointment(
+                        null,
+                        patient,
+                        doctor,
+                        dto.appointmentTime(),
+                        AppointmentStatus.AWAITING,
+                        null,
+                        AppointmentType.CONSULTATION,
+                        null
+                )
+        );
+    }
+
+    private void validateAppointmentTime(LocalDateTime appointmentTime, List<TimeRange> freeRanges) {
+        if (freeRanges.isEmpty()) {
+            throw new IllegalArgumentException("Doctor does not have free time");
+        }
+
+        // Duration of a consultation (60 mins for now)
+        long durationMinutes = AppointmentType.CONSULTATION.getDurationHours();
+
+        LocalDateTime appointmentEndTime = appointmentTime.plusMinutes(durationMinutes);
+
+        boolean insideValidRange = freeRanges.stream().anyMatch(timeRange ->
+                !appointmentTime.isBefore(timeRange.start()) &&
+                !appointmentEndTime.isAfter(timeRange.end())
+        );
+
+        if (!insideValidRange) {
+            throw new IllegalArgumentException("Selected time is not within the free range.");
+        }
     }
 
     private void validatePatient(Patient p) {

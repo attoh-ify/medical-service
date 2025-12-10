@@ -1,10 +1,14 @@
 package org.health.medical_service.controllers;
 
+import org.health.medical_service.dto.AppointmentDto;
 import org.health.medical_service.dto.DayGroupedAvailabilityResponse;
 import org.health.medical_service.dto.PatientDto;
+import org.health.medical_service.dto.RequestAppointmentDto;
+import org.health.medical_service.entities.Appointment;
 import org.health.medical_service.entities.DayOfTheWeek;
 import org.health.medical_service.entities.Patient;
 import org.health.medical_service.entities.Specialization;
+import org.health.medical_service.mappers.AppointmentMapper;
 import org.health.medical_service.mappers.PatientMapper;
 import org.health.medical_service.services.PatientService;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +21,12 @@ import java.util.Optional;
 public class PatientController {
     private final PatientService patientService;
     private final PatientMapper patientMapper;
+    private final AppointmentMapper appointmentMapper;
 
-    public PatientController(PatientService patientService, PatientMapper patientMapper) {
+    public PatientController(PatientService patientService, PatientMapper patientMapper, AppointmentMapper appointmentMapper) {
         this.patientService = patientService;
         this.patientMapper = patientMapper;
+        this.appointmentMapper = appointmentMapper;
     }
 
     @PostMapping
@@ -40,5 +46,11 @@ public class PatientController {
             @RequestParam(value = "day", required = false) DayOfTheWeek day,
             @RequestParam(value = "doctorFullName", required = false) String doctorFullName) {
         return patientService.getAvailableDoctors(specialization, day, doctorFullName);
+    }
+
+    @PostMapping(path = "/doctor/appointment")
+    public AppointmentDto bookAppointment(@RequestBody RequestAppointmentDto requestAppointmentDto) {
+        Appointment appointment = patientService.bookAppointment(requestAppointmentDto);
+        return appointmentMapper.toDto(appointment);
     }
 }

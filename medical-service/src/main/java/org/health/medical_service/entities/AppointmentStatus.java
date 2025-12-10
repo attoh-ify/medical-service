@@ -1,9 +1,8 @@
 package org.health.medical_service.entities;
 
 public enum AppointmentStatus {
-    PENDING,
-    CONFIRMED,
-    IN_PROGRESS,
-    COMPLETED,
-    CANCELLED
+    AWAITING,  // created but hasn't started
+    IN_PROGRESS,  // is currently on going
+    COMPLETED,  // has ended
+    CANCELLED  // was cancelled by doctor or patient
 }

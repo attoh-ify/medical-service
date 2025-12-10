@@ -47,18 +47,15 @@ public final class helpers {
                         LocalDateTime appEnd = appStart.plusHours(app.getAppointmentType().getDurationHours());
 
                         // Check gap BEFORE the appointment
-                        if (cursor.plusMinutes(minFreeMinutes).isBefore(appStart)) {
+                        if (!cursor.plusMinutes(minFreeMinutes).isAfter(appStart)) {
                             freeRanges.add(new TimeRange(cursor, appStart));
                         }
 
-                        // Move cursor past appointment if needed
-                        if (cursor.isBefore(appEnd)) {
-                            cursor = appEnd;
-                        }
+                        cursor = appEnd;
                     }
 
                     // Check gap AFTER last appointment
-                    if (cursor.plusMinutes(minFreeMinutes).isBefore(dayEnd)) {
+                    if (!cursor.plusMinutes(minFreeMinutes).isAfter(dayEnd)) {
                         freeRanges.add(new TimeRange(cursor, dayEnd));
                     }
                 });

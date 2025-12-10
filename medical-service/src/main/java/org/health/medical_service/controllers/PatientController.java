@@ -4,10 +4,9 @@ import org.health.medical_service.dto.PatientDto;
 import org.health.medical_service.entities.Patient;
 import org.health.medical_service.mappers.PatientMapper;
 import org.health.medical_service.services.PatientService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping(path = "/medical-service/patient")
@@ -22,7 +21,12 @@ public class PatientController {
 
     @PostMapping
     public PatientDto registerPatient(@RequestBody PatientDto patientDto) {
-        Patient regidteredPatient = patientService.registerPatient(patientMapper.fromDto(patientDto));
-        return patientMapper.toDto(regidteredPatient);
+        Patient registeredPatient = patientService.registerPatient(patientMapper.fromDto(patientDto));
+        return patientMapper.toDto(registeredPatient);
+    }
+
+    @GetMapping(path = "/{email}")
+    public Optional<PatientDto> getPatientDetails(@PathVariable("email") String email) {
+        return patientService.getPatientDetails(email).map(patientMapper::toDto);
     }
 }

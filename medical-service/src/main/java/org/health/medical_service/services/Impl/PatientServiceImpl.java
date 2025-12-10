@@ -23,6 +23,15 @@ public class PatientServiceImpl implements PatientService {
         return patientRepository.save(patient);
     }
 
+    @Override
+    public Optional<Patient> getPatientDetails(String email) {
+        Optional<Patient> patient = patientRepository.findByEmail(email);
+        if (patient.isEmpty()) {
+            throw new IllegalArgumentException("Patient with this email is not registered with us");
+        }
+        return patient;
+    }
+
     private void validate(Patient p) {
         if (p.getId() != null) throw new IllegalArgumentException("Patient ID is system generated");
         if (isBlank(p.getFullName())) throw new IllegalArgumentException("Full name required");

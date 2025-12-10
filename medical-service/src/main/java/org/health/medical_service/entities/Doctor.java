@@ -14,7 +14,7 @@ public class Doctor {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "full_name", nullable = false)
+    @Column(name = "full_name", nullable = false, unique = true)
     private String fullName;
 
     @Column(name = "email", unique = true, updatable = false, nullable = false)

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping(path = "/medical-service/patient")
@@ -48,9 +49,23 @@ public class PatientController {
         return patientService.getAvailableDoctors(specialization, day, doctorFullName);
     }
 
-    @PostMapping(path = "/doctor/appointment")
+    @PostMapping(path = "/doctor/appointments")
     public AppointmentDto bookAppointment(@RequestBody RequestAppointmentDto requestAppointmentDto) {
         Appointment appointment = patientService.bookAppointment(requestAppointmentDto);
+        return appointmentMapper.toDto(appointment);
+    }
+
+    @GetMapping(path = "/doctor/appointments/{patient_email}")
+    public List<AppointmentDto> getAppointments(@PathVariable("patient_email") String patientEmail) {
+        return patientService.getAppointments(patientEmail)
+                .stream()
+                .map(appointmentMapper::toDto)
+                .toList();
+    }
+
+    @GetMapping(path = "/doctor/appointments/{patient_email}/{appointment_id}")
+    public AppointmentDto getAppointment(@PathVariable("patient_email") String patientEmail, @PathVariable("appointment_id") UUID appointmentId) {
+        Appointment appointment = patientService.getAppointment(patientEmail, appointmentId);
         return appointmentMapper.toDto(appointment);
     }
 }

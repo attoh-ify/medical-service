@@ -14,9 +14,7 @@ import org.health.medical_service.utils.helpers;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class PatientServiceImpl implements PatientService {
@@ -114,6 +112,24 @@ public class PatientServiceImpl implements PatientService {
                         null
                 )
         );
+    }
+
+    @Override
+    public List<Appointment> getAppointments(String email) {
+        return appointmentRepository.findByPatientEmail(email);
+    }
+
+    @Override
+    public Appointment getAppointment(String patientEmail, UUID appointmentId) {
+        Optional<Appointment> appointment = appointmentRepository.findById(appointmentId);
+        if (appointment.isEmpty()) {
+            throw new IllegalArgumentException("Appointment not found");
+        }
+        if (!Objects.equals(appointment.get().getPatient().getEmail(), patientEmail)) {
+            throw new IllegalArgumentException("Appointment does not match the user");
+        }
+
+        return appointment.get();
     }
 
     private void validateAppointmentTime(LocalDateTime appointmentTime, List<TimeRange> freeRanges) {

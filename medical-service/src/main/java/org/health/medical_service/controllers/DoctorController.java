@@ -20,7 +20,12 @@ public class DoctorController {
     private final DoctorAvailabilityMapper doctorAvailabilityMapper;
     private final AppointmentMapper appointmentMapper;
 
-    public DoctorController(DoctorService doctorService, DoctorMapper doctorMapper, DoctorAvailabilityMapper doctorAvailabilityMapper, AppointmentMapper appointmentMapper) {
+    public DoctorController(
+            DoctorService doctorService,
+            DoctorMapper doctorMapper,
+            DoctorAvailabilityMapper doctorAvailabilityMapper,
+            AppointmentMapper appointmentMapper
+    ) {
         this.doctorService = doctorService;
         this.doctorMapper = doctorMapper;
         this.doctorAvailabilityMapper = doctorAvailabilityMapper;
@@ -28,43 +33,61 @@ public class DoctorController {
     }
 
     @PostMapping
-    public DoctorDto registerDoctor(@RequestBody DoctorDto doctorDto) {
+    public ResponseDto registerDoctor(@RequestBody DoctorDto doctorDto) {
         Doctor registeredDoctor = doctorService.registerDoctor(doctorMapper.fromDto(doctorDto));
-        return doctorMapper.toDto(registeredDoctor);
+        return new ResponseDto(true, "Doctor registered successfully", doctorMapper.toDto(registeredDoctor));
     }
 
-    @PostMapping(path = {"/availability/{doctor_id}"})
-    public DoctorAvailabilityDto addAvailableTime(@RequestBody DoctorAvailabilityDto doctorAvailabilityDto, @PathVariable("doctor_id") UUID doctorId) {
-        DoctorAvailability doctorAvailability = doctorService.addAvailableTime(doctorAvailabilityMapper.fromDto(doctorAvailabilityDto), doctorId);
-        return doctorAvailabilityMapper.toDto(doctorAvailability);
+    @PostMapping(path = "/availability/{doctor_id}")
+    public ResponseDto addAvailableTime(
+            @RequestBody DoctorAvailabilityDto doctorAvailabilityDto,
+            @PathVariable("doctor_id") UUID doctorId
+    ) {
+        DoctorAvailability availability = doctorService.addAvailableTime(
+                doctorAvailabilityMapper.fromDto(doctorAvailabilityDto),
+                doctorId
+        );
+
+        return new ResponseDto(true, "Doctor availability added successfully", doctorAvailabilityMapper.toDto(availability));
     }
 
     @GetMapping(path = "/appointments/cancel/{doctor_email}/{appointment_id}")
-    public AppointmentDto cancelAppointment(@PathVariable("doctor_email") String doctorEmail, @PathVariable("appointment_id") UUID appointmentId) {
+    public ResponseDto cancelAppointment(
+            @PathVariable("doctor_email") String doctorEmail,
+            @PathVariable("appointment_id") UUID appointmentId
+    ) {
         Appointment appointment = doctorService.cancelAppointment(doctorEmail, appointmentId);
-        return appointmentMapper.toDto(appointment);
+        return new ResponseDto(true, "Appointment cancelled successfully", appointmentMapper.toDto(appointment));
     }
 
     @GetMapping(path = "/appointments/{doctor_email}")
-    public AppointmentDto getNextAppointment(@PathVariable("doctor_email") String doctorEmail) {
+    public ResponseDto getNextAppointment(@PathVariable("doctor_email") String doctorEmail) {
         Appointment appointment = doctorService.getNextAppointment(doctorEmail);
-        return appointmentMapper.toDto(appointment);
+        return new ResponseDto(true, "Next appointment retrieved successfully", appointmentMapper.toDto(appointment));
     }
 
     @GetMapping(path = "/appointments/{doctor_email}/{appointment_id}")
-    public void beginAppointment(@PathVariable("doctor_email") String doctorEmail, @PathVariable("appointment_id") UUID appointmentId) {
+    public ResponseDto beginAppointment(
+            @PathVariable("doctor_email") String doctorEmail,
+            @PathVariable("appointment_id") UUID appointmentId
+    ) {
         doctorService.beginAppointment(doctorEmail, appointmentId);
+        return new ResponseDto(true, "Appointment marked as in-progress", null);
     }
 
     @PostMapping(path = "/appointments/{doctor_email}/{appointment_id}")
-    public AppointmentDto completeAppointment(@RequestBody RecordAppointmentResult recordAppointmentResult, @PathVariable("doctor_email") String doctorEmail, @PathVariable("appointment_id") UUID appointmentId) {
+    public ResponseDto completeAppointment(
+            @RequestBody RecordAppointmentResult recordAppointmentResult,
+            @PathVariable("doctor_email") String doctorEmail,
+            @PathVariable("appointment_id") UUID appointmentId
+    ) {
         Appointment appointment = doctorService.completeAppointment(recordAppointmentResult, doctorEmail, appointmentId);
-        return appointmentMapper.toDto(appointment);
+        return new ResponseDto(true, "Appointment completed successfully", appointmentMapper.toDto(appointment));
     }
 
-    @PostMapping(path = "/doctor/appointments/bookFollowUp")
-    public AppointmentDto bookFollowUpAppointment(@RequestBody RequestAppointmentDto requestAppointmentDto) {
+    @PostMapping(path = "/appointments/bookFollowUp")
+    public ResponseDto bookFollowUpAppointment(@RequestBody RequestAppointmentDto requestAppointmentDto) {
         Appointment followUpAppointment = doctorService.bookFollowUpAppointment(requestAppointmentDto);
-        return appointmentMapper.toDto(followUpAppointment);
+        return new ResponseDto(true, "Follow-up appointment booked successfully", appointmentMapper.toDto(followUpAppointment));
     }
 }

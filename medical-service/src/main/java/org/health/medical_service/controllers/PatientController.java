@@ -1,9 +1,6 @@
 package org.health.medical_service.controllers;
 
-import org.health.medical_service.dto.AppointmentDto;
-import org.health.medical_service.dto.DayGroupedAvailabilityResponse;
-import org.health.medical_service.dto.PatientDto;
-import org.health.medical_service.dto.RequestAppointmentDto;
+import org.health.medical_service.dto.*;
 import org.health.medical_service.entities.Appointment;
 import org.health.medical_service.entities.DayOfTheWeek;
 import org.health.medical_service.entities.Patient;
@@ -30,48 +27,88 @@ public class PatientController {
     }
 
     @PostMapping
-    public PatientDto registerPatient(@RequestBody PatientDto patientDto) {
+    public ResponseDto registerPatient(@RequestBody PatientDto patientDto) {
         Patient registeredPatient = patientService.registerPatient(patientMapper.fromDto(patientDto));
-        return patientMapper.toDto(registeredPatient);
+        return new ResponseDto(
+                true,
+                "Patient registered successfully",
+                patientMapper.toDto(registeredPatient)
+        );
     }
 
     @GetMapping(path = "/{email}")
-    public PatientDto getPatientDetails(@PathVariable("email") String email) {
+    public ResponseDto getPatientDetails(@PathVariable("email") String email) {
         Patient patient = patientService.getPatientDetails(email);
-        return patientMapper.toDto(patient);
+        return new ResponseDto(
+                true,
+                "Patient details fetched successfully",
+                patientMapper.toDto(patient)
+        );
     }
 
     @GetMapping(path = "/doctor/available")
-    public List<DayGroupedAvailabilityResponse> getAvailableDoctors(
+    public ResponseDto getAvailableDoctors(
             @RequestParam("specialization") Specialization specialization,
             @RequestParam(value = "day", required = false) DayOfTheWeek day,
             @RequestParam(value = "doctorFullName", required = false) String doctorFullName) {
-        return patientService.getAvailableDoctors(specialization, day, doctorFullName);
+
+        List<DayGroupedAvailabilityResponse> response =
+                patientService.getAvailableDoctors(specialization, day, doctorFullName);
+
+        return new ResponseDto(
+                true,
+                "Available doctors fetched successfully",
+                response
+        );
     }
 
     @PostMapping(path = "/doctor/appointments")
-    public AppointmentDto bookAppointment(@RequestBody RequestAppointmentDto requestAppointmentDto) {
+    public ResponseDto bookAppointment(@RequestBody RequestAppointmentDto requestAppointmentDto) {
         Appointment appointment = patientService.bookAppointment(requestAppointmentDto);
-        return appointmentMapper.toDto(appointment);
+        return new ResponseDto(
+                true,
+                "Appointment booked successfully",
+                appointmentMapper.toDto(appointment)
+        );
     }
 
     @GetMapping(path = "/doctor/appointments/{patient_email}")
-    public List<AppointmentDto> getAppointments(@PathVariable("patient_email") String patientEmail) {
-        return patientService.getAppointments(patientEmail)
+    public ResponseDto getAppointments(@PathVariable("patient_email") String patientEmail) {
+        List<AppointmentDto> appointments = patientService.getAppointments(patientEmail)
                 .stream()
                 .map(appointmentMapper::toDto)
                 .toList();
+
+        return new ResponseDto(
+                true,
+                "Appointments fetched successfully",
+                appointments
+        );
     }
 
     @GetMapping(path = "/doctor/appointments/{patient_email}/{appointment_id}")
-    public AppointmentDto getAppointment(@PathVariable("patient_email") String patientEmail, @PathVariable("appointment_id") UUID appointmentId) {
+    public ResponseDto getAppointment(
+            @PathVariable("patient_email") String patientEmail,
+            @PathVariable("appointment_id") UUID appointmentId) {
+
         Appointment appointment = patientService.getAppointment(patientEmail, appointmentId);
-        return appointmentMapper.toDto(appointment);
+        return new ResponseDto(
+                true,
+                "Appointment fetched successfully",
+                appointmentMapper.toDto(appointment)
+        );
     }
 
     @GetMapping(path = "/doctor/appointments/cancel/{patient_email}/{appointment_id}")
-    public AppointmentDto cancelAppointment(@PathVariable("patient_email") String patientEmail, @PathVariable("appointment_id") UUID appointmentId) {
+    public ResponseDto cancelAppointment(
+            @PathVariable("patient_email") String patientEmail,
+            @PathVariable("appointment_id") UUID appointmentId) {
+
         Appointment appointment = patientService.cancelAppointment(patientEmail, appointmentId);
-        return appointmentMapper.toDto(appointment);
+        return new ResponseDto(
+                true,
+                "Appointment cancelled successfully",
+                appointmentMapper.toDto(appointment)
+        );
     }
 }

@@ -1,9 +1,7 @@
 package org.health.medical_service.utils;
 
 import org.health.medical_service.dto.TimeRange;
-import org.health.medical_service.entities.Appointment;
-import org.health.medical_service.entities.DayOfTheWeek;
-import org.health.medical_service.entities.Doctor;
+import org.health.medical_service.entities.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -36,7 +34,8 @@ public final class helpers {
                     // Appointments for today
                     List<Appointment> todaysAppointments = doctor.getAppointments()
                             .stream()
-                            .filter(app -> app.getAppointmentTime().toLocalDate().equals(date))
+                            .filter(appointment -> appointment.getAppointmentTime().toLocalDate().equals(date))
+                            .filter(appointment -> List.of(AppointmentStatus.AWAITING, AppointmentStatus.IN_PROGRESS).contains(appointment.getStatus()))
                             .sorted(Comparator.comparing(Appointment::getAppointmentTime))
                             .toList();
 
@@ -68,5 +67,25 @@ public final class helpers {
                 .filter(app -> app.getAppointmentTime().toLocalDate().equals(date))
                 .mapToInt(app -> app.getAppointmentType().getDurationHours())
                 .sum();
+    }
+
+    public static void validateAppointmentTime(LocalDateTime appointmentTime, List<TimeRange> freeRanges) {
+        if (freeRanges.isEmpty()) {
+            throw new IllegalArgumentException("Doctor does not have free time");
+        }
+
+        // Duration of a consultation (60 mins for now)
+        long durationMinutes = AppointmentType.CONSULTATION.getDurationHours();
+
+        LocalDateTime appointmentEndTime = appointmentTime.plusMinutes(durationMinutes);
+
+        boolean insideValidRange = freeRanges.stream().anyMatch(timeRange ->
+                !appointmentTime.isBefore(timeRange.start()) &&
+                        !appointmentEndTime.isAfter(timeRange.end())
+        );
+
+        if (!insideValidRange) {
+            throw new IllegalArgumentException("Selected time is not within the free range.");
+        }
     }
 }

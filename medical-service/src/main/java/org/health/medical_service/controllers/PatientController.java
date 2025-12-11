@@ -14,7 +14,6 @@ import org.health.medical_service.services.PatientService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -37,8 +36,9 @@ public class PatientController {
     }
 
     @GetMapping(path = "/{email}")
-    public Optional<PatientDto> getPatientDetails(@PathVariable("email") String email) {
-        return patientService.getPatientDetails(email).map(patientMapper::toDto);
+    public PatientDto getPatientDetails(@PathVariable("email") String email) {
+        Patient patient = patientService.getPatientDetails(email);
+        return patientMapper.toDto(patient);
     }
 
     @GetMapping(path = "/doctor/available")
@@ -66,6 +66,12 @@ public class PatientController {
     @GetMapping(path = "/doctor/appointments/{patient_email}/{appointment_id}")
     public AppointmentDto getAppointment(@PathVariable("patient_email") String patientEmail, @PathVariable("appointment_id") UUID appointmentId) {
         Appointment appointment = patientService.getAppointment(patientEmail, appointmentId);
+        return appointmentMapper.toDto(appointment);
+    }
+
+    @GetMapping(path = "/doctor/appointments/cancel/{patient_email}/{appointment_id}")
+    public AppointmentDto cancelAppointment(@PathVariable("patient_email") String patientEmail, @PathVariable("appointment_id") UUID appointmentId) {
+        Appointment appointment = patientService.cancelAppointment(patientEmail, appointmentId);
         return appointmentMapper.toDto(appointment);
     }
 }

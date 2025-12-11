@@ -35,12 +35,12 @@ public class PatientServiceImpl implements PatientService {
     }
 
     @Override
-    public Optional<Patient> getPatientDetails(String email) {
+    public Patient getPatientDetails(String email) {
         Optional<Patient> patient = patientRepository.findByEmail(email);
         if (patient.isEmpty()) {
             throw new IllegalArgumentException("Patient with this email is not registered with us");
         }
-        return patient;
+        return patient.get();
     }
 
     @Override
@@ -98,7 +98,7 @@ public class PatientServiceImpl implements PatientService {
         Doctor doctor = doctorRepository.findById(dto.doctorId()).orElseThrow(() -> new IllegalArgumentException("Doctor not found."));
         List<TimeRange> freeRanges = helpers.calculateFreeTimeRanges(doctor, dto.appointmentTime().toLocalDate(), 60);
         
-        validateAppointmentTime(dto.appointmentTime(), freeRanges);
+        helpers.validateAppointmentTime(dto.appointmentTime(), freeRanges);
 
         return appointmentRepository.save(
                 new Appointment(
@@ -128,28 +128,21 @@ public class PatientServiceImpl implements PatientService {
         if (!Objects.equals(appointment.get().getPatient().getEmail(), patientEmail)) {
             throw new IllegalArgumentException("Appointment does not match the user");
         }
-
         return appointment.get();
     }
 
-    private void validateAppointmentTime(LocalDateTime appointmentTime, List<TimeRange> freeRanges) {
-        if (freeRanges.isEmpty()) {
-            throw new IllegalArgumentException("Doctor does not have free time");
+    @Override
+    public Appointment cancelAppointment(String patientEmail, UUID appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
+        if (!Objects.equals(appointment.getPatient().getEmail(), patientEmail)) {
+            throw new IllegalArgumentException("Appointment does not match the patient");
         }
-
-        // Duration of a consultation (60 mins for now)
-        long durationMinutes = AppointmentType.CONSULTATION.getDurationHours();
-
-        LocalDateTime appointmentEndTime = appointmentTime.plusMinutes(durationMinutes);
-
-        boolean insideValidRange = freeRanges.stream().anyMatch(timeRange ->
-                !appointmentTime.isBefore(timeRange.start()) &&
-                !appointmentEndTime.isAfter(timeRange.end())
-        );
-
-        if (!insideValidRange) {
-            throw new IllegalArgumentException("Selected time is not within the free range.");
+        if (appointment.getStatus() != AppointmentStatus.AWAITING) {
+            throw new IllegalArgumentException("Appointment can no longer be updated.");
         }
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointmentRepository.save(appointment);
+        return appointment;
     }
 
     private void validatePatient(Patient p) {

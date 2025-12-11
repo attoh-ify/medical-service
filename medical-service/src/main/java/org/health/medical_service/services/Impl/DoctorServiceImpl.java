@@ -1,27 +1,34 @@
 package org.health.medical_service.services.Impl;
 
-import org.health.medical_service.entities.DayOfTheWeek;
-import org.health.medical_service.entities.Doctor;
-import org.health.medical_service.entities.DoctorAvailability;
+import org.health.medical_service.dto.RecordAppointmentResult;
+import org.health.medical_service.dto.RequestAppointmentDto;
+import org.health.medical_service.dto.TimeRange;
+import org.health.medical_service.entities.*;
+import org.health.medical_service.repositories.AppointmentRepository;
 import org.health.medical_service.repositories.DoctorAvailabilityRepository;
 import org.health.medical_service.repositories.DoctorRepository;
+import org.health.medical_service.repositories.PatientRepository;
 import org.health.medical_service.services.DoctorService;
 import org.health.medical_service.utils.helpers;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class DoctorServiceImpl implements DoctorService {
     private final DoctorRepository doctorRepository;
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final PatientRepository patientRepository;
 
-    public DoctorServiceImpl(DoctorRepository doctorRepository, DoctorAvailabilityRepository doctorAvailabilityRepository) {
+    public DoctorServiceImpl(DoctorRepository doctorRepository, DoctorAvailabilityRepository doctorAvailabilityRepository, AppointmentRepository appointmentRepository, PatientRepository patientRepository) {
         this.doctorRepository = doctorRepository;
         this.doctorAvailabilityRepository = doctorAvailabilityRepository;
+        this.appointmentRepository = appointmentRepository;
+        this.patientRepository = patientRepository;
     }
 
     @Override
@@ -42,6 +49,94 @@ public class DoctorServiceImpl implements DoctorService {
                         doctorAvailability.getEndTime()
                 )
         );
+    }
+
+    @Override
+    public Appointment cancelAppointment(String doctorEmail, UUID appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
+        if (!Objects.equals(appointment.getDoctor().getEmail(), doctorEmail)) {
+            throw new IllegalArgumentException("Appointment does not match the doctor");
+        }
+        if (appointment.getStatus() != AppointmentStatus.AWAITING) {
+            throw new IllegalArgumentException("Appointment can no longer be updated.");
+        }
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        appointmentRepository.save(appointment);
+        return appointment;
+    }
+
+    @Override
+    public Appointment getNextAppointment(String doctorEmail) {
+        List<Appointment> appointments = appointmentRepository.findByDoctorEmail(doctorEmail)
+                .stream()
+                .filter(appointment -> List.of(AppointmentStatus.AWAITING, AppointmentStatus.IN_PROGRESS).contains(appointment.getStatus()))
+                .sorted(Comparator.comparing(Appointment::getAppointmentTime))
+                .toList();
+        return appointments.get(0);
+    }
+
+    @Override
+    public void beginAppointment(String doctorEmail, UUID appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new IllegalArgumentException("Appointment not found."));
+        Doctor doctor = doctorRepository.findByEmail(doctorEmail).orElseThrow(() -> new IllegalArgumentException("Doctor not found."));
+        if (appointment.getDoctor() != doctor) {
+            throw new IllegalArgumentException("Doctor does not match Appointment.");
+        }
+        if (appointment.getStatus() != AppointmentStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("This appointment does not have status 'IN PROGRESS' and so can not be begun.");
+        }
+        if (appointment.getAppointmentTime().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Its not yet time for the appointment.");
+        }
+        appointment.setStatus(AppointmentStatus.IN_PROGRESS);
+        appointmentRepository.save(appointment);
+    }
+
+    @Override
+    public Appointment completeAppointment(RecordAppointmentResult dto, String doctorEmail, UUID appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
+        Doctor doctor = doctorRepository.findByEmail(doctorEmail).orElseThrow(() -> new IllegalArgumentException("Doctor not found."));
+        if (appointment.getDoctor() != doctor) {
+            throw new IllegalArgumentException("Doctor does not match Appointment.");
+        }
+        if (appointment.getStatus() != AppointmentStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("You can not record result for this appointment.");
+        }
+        if (helpers.isBlank(dto.result())) {
+            throw new IllegalArgumentException("Result data required to complete appointment.");
+        }
+        appointment.setResult(dto.result());
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        return appointmentRepository.save(appointment);
+    }
+
+    @Override
+    public Appointment bookFollowUpAppointment(RequestAppointmentDto dto) {
+        Patient patient = patientRepository.findByEmail(dto.patientEmail()).orElseThrow(() -> new IllegalArgumentException("Patient not found."));
+        Doctor doctor = doctorRepository.findById(dto.doctorId()).orElseThrow(() -> new IllegalArgumentException("Doctor not found."));
+        Appointment appointment = appointmentRepository.findById(dto.previousAppointmentID()).orElseThrow(() -> new IllegalArgumentException("Appointment not found."));
+        if (appointment.getPatient() != patient || appointment.getDoctor() != doctor) {
+            throw new IllegalArgumentException("Patient or Doctor does not match Appointment.");
+        }
+        List<TimeRange> freeRanges = helpers.calculateFreeTimeRanges(doctor, dto.appointmentTime().toLocalDate(), 60);
+
+        helpers.validateAppointmentTime(dto.appointmentTime(), freeRanges);
+
+        Appointment followUpAppointment = appointmentRepository.save(
+                new Appointment(
+                        null,
+                        patient,
+                        doctor,
+                        dto.appointmentTime(),
+                        AppointmentStatus.AWAITING,
+                        null,
+                        dto.followUpAppointmentType(),
+                        null
+                )
+        );
+        appointment.setFollowUpAppointment(followUpAppointment.getId());
+        appointmentRepository.save(appointment);
+        return followUpAppointment;
     }
 
     private void validateDoctor(Doctor d) {

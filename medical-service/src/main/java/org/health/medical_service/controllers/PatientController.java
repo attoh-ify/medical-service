@@ -111,4 +111,19 @@ public class PatientController {
                 appointmentMapper.toDto(appointment)
         );
     }
+
+    @GetMapping(path = "/doctor/appointments/{patient_email}/{appointment_id}")
+    public ResponseDto getAppointmentTrail(
+            @PathVariable("patient_email") String patientEmail,
+            @PathVariable("appointment_id") UUID appointmentId) {
+        List<AppointmentDto> appointments = patientService.getAppointmentTrail(patientEmail, appointmentId)
+                .stream()
+                .map(appointmentMapper::toDto)
+                .toList();
+        return new ResponseDto(
+                true,
+                "",
+                appointments
+        );
+    }
 }

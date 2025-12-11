@@ -59,6 +59,11 @@ public class DoctorServiceImpl implements DoctorService {
         );
     }
 
+    @Override
+    public List<Appointment> getAppointments(String doctorEmail) {
+        return appointmentRepository.findByDoctorEmail(doctorEmail);
+    }
+
     @Transactional
     @Override
     public Appointment cancelAppointment(String doctorEmail, UUID appointmentId) {

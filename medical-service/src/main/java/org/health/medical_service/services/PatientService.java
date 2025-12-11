@@ -15,4 +15,5 @@ public interface PatientService {
     List<Appointment> getAppointments(String patientEmail);
     Appointment getAppointment(String patientEmail, UUID appointmentId);
     Appointment cancelAppointment(String patientEmail, UUID appointmentId);
+    List<Appointment> getAppointmentTrail(String patientEmail, UUID appointmentId);
 }

@@ -10,6 +10,7 @@ import org.health.medical_service.mappers.DoctorMapper;
 import org.health.medical_service.services.DoctorService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -49,6 +50,12 @@ public class DoctorController {
         );
 
         return new ResponseDto(true, "Doctor availability added successfully", doctorAvailabilityMapper.toDto(availability));
+    }
+
+    @GetMapping(path = "/appointments/{doctor_email}")
+    public ResponseDto getAppointments(@RequestParam("doctor_email") String doctorEmail) {
+        List<Appointment> appointments = doctorService.getAppointments(doctorEmail);
+        return new ResponseDto(true, "Doctor appointments found successfully", appointments);
     }
 
     @GetMapping(path = "/appointments/cancel/{doctor_email}/{appointment_id}")

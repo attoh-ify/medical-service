@@ -158,6 +158,33 @@ public class PatientServiceImpl implements PatientService {
         return appointment;
     }
 
+    @Override
+    public List<Appointment> getAppointmentTrail(String patientEmail, UUID appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
+        
+        if (!appointment.getPatient().getEmail().equals(patientEmail)) {
+            throw new IllegalArgumentException("Appointment does not match the patient");
+        }
+
+        return appointmentRecursion(appointmentId);
+    }
+
+    private List<Appointment> appointmentRecursion(UUID appointmentId) {
+        List<Appointment> appointments = new ArrayList<>();
+
+        appointmentRepository.findById(appointmentId).ifPresent(
+                appointment -> {
+                    appointments.add(appointment);
+                    UUID next = appointment.getFollowUpAppointmentId();
+                    if (next != null) {
+                        appointments.addAll(appointmentRecursion(next));
+                    }
+                }
+        );
+        return appointments;
+    }
+
     @Transactional
     private void validatePatient(Patient p) {
         if (p.getId() != null) throw new IllegalArgumentException("Patient ID is system generated");

@@ -4,13 +4,17 @@ import org.health.medical_service.dto.RecordAppointmentResult;
 import org.health.medical_service.dto.RequestAppointmentDto;
 import org.health.medical_service.dto.TimeRange;
 import org.health.medical_service.entities.*;
+import org.health.medical_service.events.AppointmentCreated;
+import org.health.medical_service.events.DoctorCreated;
 import org.health.medical_service.repositories.AppointmentRepository;
 import org.health.medical_service.repositories.DoctorAvailabilityRepository;
 import org.health.medical_service.repositories.DoctorRepository;
 import org.health.medical_service.repositories.PatientRepository;
 import org.health.medical_service.services.DoctorService;
 import org.health.medical_service.utils.helpers;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -23,18 +27,22 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
+    private final ApplicationEventPublisher publisher;
 
-    public DoctorServiceImpl(DoctorRepository doctorRepository, DoctorAvailabilityRepository doctorAvailabilityRepository, AppointmentRepository appointmentRepository, PatientRepository patientRepository) {
+    public DoctorServiceImpl(DoctorRepository doctorRepository, DoctorAvailabilityRepository doctorAvailabilityRepository, AppointmentRepository appointmentRepository, PatientRepository patientRepository, ApplicationEventPublisher publisher) {
         this.doctorRepository = doctorRepository;
         this.doctorAvailabilityRepository = doctorAvailabilityRepository;
         this.appointmentRepository = appointmentRepository;
         this.patientRepository = patientRepository;
+        this.publisher = publisher;
     }
 
     @Override
     public Doctor registerDoctor(Doctor doctor) {
         validateDoctor(doctor);
-        return doctorRepository.save(doctor);
+        Doctor createdDoctor = doctorRepository.save(doctor);
+        publisher.publishEvent(new DoctorCreated(createdDoctor));
+        return createdDoctor;
     }
 
     @Override
@@ -51,6 +59,7 @@ public class DoctorServiceImpl implements DoctorService {
         );
     }
 
+    @Transactional
     @Override
     public Appointment cancelAppointment(String doctorEmail, UUID appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
@@ -65,6 +74,7 @@ public class DoctorServiceImpl implements DoctorService {
         return appointment;
     }
 
+    @Transactional
     @Override
     public Appointment getNextAppointment(String doctorEmail) {
         List<Appointment> appointments = appointmentRepository.findByDoctorEmail(doctorEmail)
@@ -75,6 +85,7 @@ public class DoctorServiceImpl implements DoctorService {
         return appointments.get(0);
     }
 
+    @Transactional
     @Override
     public void beginAppointment(String doctorEmail, UUID appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new IllegalArgumentException("Appointment not found."));
@@ -92,6 +103,7 @@ public class DoctorServiceImpl implements DoctorService {
         appointmentRepository.save(appointment);
     }
 
+    @Transactional
     @Override
     public Appointment completeAppointment(RecordAppointmentResult dto, String doctorEmail, UUID appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
@@ -110,6 +122,7 @@ public class DoctorServiceImpl implements DoctorService {
         return appointmentRepository.save(appointment);
     }
 
+    @Transactional
     @Override
     public Appointment bookFollowUpAppointment(RequestAppointmentDto dto) {
         Patient patient = patientRepository.findByEmail(dto.patientEmail()).orElseThrow(() -> new IllegalArgumentException("Patient not found."));
@@ -136,9 +149,11 @@ public class DoctorServiceImpl implements DoctorService {
         );
         appointment.setFollowUpAppointment(followUpAppointment.getId());
         appointmentRepository.save(appointment);
+        publisher.publishEvent(new AppointmentCreated(followUpAppointment));
         return followUpAppointment;
     }
 
+    @Transactional
     private void validateDoctor(Doctor d) {
         if (d.getId() != null) throw new IllegalArgumentException("Doctor ID is system generated");
         if (helpers.isBlank(d.getFullName())) throw new IllegalArgumentException("Full name required");
@@ -156,6 +171,7 @@ public class DoctorServiceImpl implements DoctorService {
         }
     }
 
+    @Transactional
     private Doctor validateDoctorAvailability(DoctorAvailability d, UUID doctorId) {
         if (d.getId() != null) throw new IllegalArgumentException("Doctor availability ID is system generated");
         Optional<Doctor> doctor = doctorRepository.findById(doctorId);

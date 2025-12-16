@@ -6,10 +6,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record RequestAppointmentDto(
-        String patientEmail,
+        UUID patientId,
         LocalDateTime appointmentTime,
         UUID doctorId,
-        UUID previousAppointmentID,
         AppointmentType followUpAppointmentType
 ) {
 }

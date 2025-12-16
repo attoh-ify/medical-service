@@ -41,16 +41,14 @@ public class PatientServiceImpl implements PatientService {
         return createdPatient;
     }
 
+    @Transactional(readOnly = true)
     @Override
-    public Patient getPatientDetails(String email) {
-        Optional<Patient> patient = patientRepository.findByEmail(email);
-        if (patient.isEmpty()) {
-            throw new IllegalArgumentException("Patient with this email is not registered with us");
-        }
-        return patient.get();
+    public Patient getPatientDetails(UUID patientId) {
+        return patientRepository.findById(patientId)
+                .orElseThrow(() -> new IllegalArgumentException("Patient with this ID is not registered."));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
     public List<DayGroupedAvailabilityResponse> getAvailableDoctors(
             Specialization specialization,
@@ -72,7 +70,6 @@ public class PatientServiceImpl implements PatientService {
             List<DoctorDailySlotResponse> doctorsForThisDay = new ArrayList<>();
 
             for (Doctor doctor : doctors) {
-
                 boolean worksToday = doctor.getDoctorAvailabilities()
                         .stream()
                         .anyMatch(a -> a.getDay() == dow);
@@ -102,86 +99,34 @@ public class PatientServiceImpl implements PatientService {
 
     @Transactional
     @Override
-    public Appointment bookAppointment(RequestAppointmentDto dto) {
-        Patient patient = patientRepository.findByEmail(dto.patientEmail()).orElseThrow(() -> new IllegalArgumentException("Patient not found."));
-        Doctor doctor = doctorRepository.findById(dto.doctorId()).orElseThrow(() -> new IllegalArgumentException("Doctor not found."));
-        List<TimeRange> freeRanges = helpers.calculateFreeTimeRanges(doctor, dto.appointmentTime().toLocalDate(), 60);
-        
-        helpers.validateAppointmentTime(dto.appointmentTime(), freeRanges);
-
-        Appointment appointment = appointmentRepository.save(
-                new Appointment(
-                        null,
-                        patient,
-                        doctor,
-                        dto.appointmentTime(),
-                        AppointmentStatus.AWAITING,
-                        null,
-                        AppointmentType.CONSULTATION,
-                        null
-                )
-        );
-        publisher.publishEvent(new AppointmentCreated(appointment));
-        return appointment;
-    }
-
-    @Transactional
-    @Override
-    public List<Appointment> getAppointments(String email) {
-        return appointmentRepository.findByPatientEmail(email);
+    public List<Appointment> getAppointments(UUID patientId) {
+        return appointmentRepository.findByPatientId(patientId);
     }
 
     @Override
-    public Appointment getAppointment(String patientEmail, UUID appointmentId) {
-        Optional<Appointment> appointment = appointmentRepository.findById(appointmentId);
-        if (appointment.isEmpty()) {
-            throw new IllegalArgumentException("Appointment not found");
-        }
-        if (!Objects.equals(appointment.get().getPatient().getEmail(), patientEmail)) {
-            throw new IllegalArgumentException("Appointment does not match the user");
-        }
-        return appointment.get();
-    }
-
-    @Transactional
-    @Override
-    public Appointment cancelAppointment(String patientEmail, UUID appointmentId) {
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
-        if (!Objects.equals(appointment.getPatient().getEmail(), patientEmail)) {
-            throw new IllegalArgumentException("Appointment does not match the patient");
-        }
-        if (appointment.getStatus() != AppointmentStatus.AWAITING) {
-            throw new IllegalArgumentException("Appointment can no longer be updated.");
-        }
-        appointment.setStatus(AppointmentStatus.CANCELLED);
-        appointmentRepository.save(appointment);
-        return appointment;
-    }
-
-    @Override
-    public List<Appointment> getAppointmentTrail(String patientEmail, UUID appointmentId) {
+    public List<Appointment> getAppointmentTrail(UUID patientId, UUID appointmentId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
-        
-        if (!appointment.getPatient().getEmail().equals(patientEmail)) {
+
+        if (!appointment.getPatient().getId().equals(patientId)) {
             throw new IllegalArgumentException("Appointment does not match the patient");
         }
 
-        return appointmentRecursion(appointmentId);
+        Set<UUID> visited = new HashSet<>();
+        return appointmentRecursion(appointmentId, patientId, visited);
     }
 
-    private List<Appointment> appointmentRecursion(UUID appointmentId) {
-        List<Appointment> appointments = new ArrayList<>();
+    private List<Appointment> appointmentRecursion(UUID appointmentId, UUID patientId, Set<UUID> visited) {
+        if (!visited.add(appointmentId)) return Collections.emptyList();
 
-        appointmentRepository.findById(appointmentId).ifPresent(
-                appointment -> {
-                    appointments.add(appointment);
-                    UUID next = appointment.getFollowUpAppointmentId();
-                    if (next != null) {
-                        appointments.addAll(appointmentRecursion(next));
-                    }
-                }
-        );
+        List<Appointment> appointments = new ArrayList<>();
+        appointmentRepository.findById(appointmentId).ifPresent(app -> {
+            if (!app.getPatient().getId().equals(patientId)) return; // skip if patient mismatch
+            appointments.add(app);
+            if (app.getFollowUpAppointmentId() != null) {
+                appointments.addAll(appointmentRecursion(app.getFollowUpAppointmentId(), patientId, visited));
+            }
+        });
         return appointments;
     }
 
@@ -194,13 +139,13 @@ public class PatientServiceImpl implements PatientService {
         if (p.getDob() == null || p.getDob().isAfter(LocalDate.now())) throw new IllegalArgumentException("Invalid DOB");
         if (p.getGender() == null) throw new IllegalArgumentException("Gender required");
         if (helpers.isBlank(p.getAddress())) throw new IllegalArgumentException("Address required");
-        Optional<Patient> emailExists = patientRepository.findByEmail(p.getEmail());
-        if (emailExists.isPresent()) {
+
+        patientRepository.findByEmail(p.getEmail()).ifPresent(existing -> {
             throw new IllegalArgumentException("This email is already registered to a patient.");
-        }
-        Optional<Patient> phoneExists = patientRepository.findByPhone(p.getPhone());
-        if (phoneExists.isPresent()) {
+        });
+
+        patientRepository.findByPhone(p.getPhone()).ifPresent(existing -> {
             throw new IllegalArgumentException("This phone is already registered to a patient.");
-        }
+        });
     }
 }

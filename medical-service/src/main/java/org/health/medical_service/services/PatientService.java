@@ -9,11 +9,12 @@ import java.util.UUID;
 
 public interface PatientService {
     Patient registerPatient(Patient patient);
-    Patient getPatientDetails(String email);
-    List<DayGroupedAvailabilityResponse> getAvailableDoctors(Specialization specialization, DayOfTheWeek day, String doctorFullName);
-    Appointment bookAppointment(RequestAppointmentDto requestAppointmentDto);
-    List<Appointment> getAppointments(String patientEmail);
-    Appointment getAppointment(String patientEmail, UUID appointmentId);
-    Appointment cancelAppointment(String patientEmail, UUID appointmentId);
-    List<Appointment> getAppointmentTrail(String patientEmail, UUID appointmentId);
+    Patient getPatientDetails(UUID patientId);
+    List<DayGroupedAvailabilityResponse> getAvailableDoctors(
+            Specialization specialization,
+            DayOfTheWeek day,
+            String doctorFullName
+    );
+    List<Appointment> getAppointments(UUID patientId);
+    List<Appointment> getAppointmentTrail(UUID patientId, UUID appointmentId);
 }

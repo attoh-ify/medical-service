@@ -37,7 +37,7 @@ public class PatientServiceImpl implements PatientService {
     public Patient registerPatient(Patient patient) {
         validatePatient(patient);
         Patient createdPatient = patientRepository.save(patient);
-        publisher.publishEvent(new PatientCreated(createdPatient));
+//        publisher.publishEvent(new PatientCreated(createdPatient));
         return createdPatient;
     }
 

@@ -58,7 +58,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                         null
                 )
         );
-        publisher.publishEvent(new AppointmentCreated(appointment));
+//        publisher.publishEvent(new AppointmentCreated(appointment));
         return appointment;
     }
 
@@ -171,7 +171,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         );
         previous.setFollowUpAppointment(followUpAppointment.getId());
         appointmentRepository.save(previous);
-        publisher.publishEvent(new AppointmentCreated(followUpAppointment));
+//        publisher.publishEvent(new AppointmentCreated(followUpAppointment));
         return followUpAppointment;
     }
 }

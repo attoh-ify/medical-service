@@ -32,7 +32,7 @@ public class DoctorServiceImpl implements DoctorService {
     public Doctor registerDoctor(Doctor doctor) {
         validateDoctor(doctor);
         Doctor createdDoctor = doctorRepository.save(doctor);
-        publisher.publishEvent(new DoctorCreated(createdDoctor));
+//        publisher.publishEvent(new DoctorCreated(createdDoctor));
         return createdDoctor;
     }
 

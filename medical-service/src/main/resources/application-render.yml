@@ -12,3 +12,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+
+  logging:
+    level:
+      org.hibernate.SQL: debug
+      org.hibernate.tool.schema: trace

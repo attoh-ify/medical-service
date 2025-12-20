@@ -6,7 +6,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "appointments")
+@Table(
+        name = "appointments",
+        indexes = {
+                @Index(name = "idx_appointment_patient", columnList = "patient_id"),
+                @Index(name = "idx_appointment_doctor", columnList = "doctor_id")
+        }
+)
 public class Appointment {
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -14,11 +20,11 @@ public class Appointment {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "patient_id")
+    @JoinColumn(name = "patient_id", nullable = false)
     private Patient patient;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "doctor_id")
+    @JoinColumn(name = "doctor_id", nullable = false)
     private Doctor doctor;
 
     @Column(nullable = false)

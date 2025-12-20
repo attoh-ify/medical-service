@@ -7,7 +7,12 @@ import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "doctor_availabilities")
+@Table(
+        name = "doctor_availabilities",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"doctor_id", "day"})
+        }
+)
 public class DoctorAvailability {
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -18,7 +23,7 @@ public class DoctorAvailability {
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
 
-    @Column(updatable = false, unique = true, nullable = false)
+    @Column(updatable = false, nullable = false)
     @Enumerated(EnumType.STRING)
     private DayOfTheWeek day;
 

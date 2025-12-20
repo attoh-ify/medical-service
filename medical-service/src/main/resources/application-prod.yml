@@ -9,3 +9,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+
+  logging:
+    level:
+      org.hibernate.SQL: debug
+      org.hibernate.tool.schema: trace
+

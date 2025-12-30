@@ -64,15 +64,13 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Transactional
     @Override
-    public Appointment cancelAppointment(UUID appointmentId, UUID actorId) {
+    public Appointment cancelAppointment(UUID appointmentId, UUID doctorId) {
         Appointment appointment = appointmentRepository.findById(appointmentId)
                 .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
 
-        boolean isDoctor = appointment.getDoctor().getId().equals(actorId);
-        boolean isPatient = appointment.getPatient().getId().equals(actorId);
-
-        if (!isDoctor && !isPatient) {
-            throw new IllegalArgumentException("Actor not authorized for this appointment");
+        boolean isDoctor = appointment.getDoctor().getId().equals(doctorId);
+        if (!isDoctor) {
+            throw new IllegalArgumentException("Doctor not authorized for this appointment");
         }
 
         if (appointment.getStatus() != AppointmentStatus.AWAITING) {

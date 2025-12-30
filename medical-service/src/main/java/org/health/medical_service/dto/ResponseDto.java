@@ -5,4 +5,7 @@ public record ResponseDto(
         String message,
         Object data
 ) {
+    public ResponseDto(String message, Object data) {
+        this(true, message, data);
+    }
 }

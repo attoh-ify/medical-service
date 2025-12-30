@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/medical-service/patients")
+@RequestMapping("/api/patients")
 public class PatientController {
     private final PatientService patientService;
     private final PatientMapper patientMapper;
@@ -31,7 +31,6 @@ public class PatientController {
     @PostMapping
     public ResponseDto register(@RequestBody PatientDto dto) {
         return new ResponseDto(
-                true,
                 "Patient registered",
                 patientMapper.toDto(
                         patientService.registerPatient(
@@ -44,7 +43,6 @@ public class PatientController {
     @GetMapping("/{patientId}")
     public ResponseDto getDetails(@PathVariable UUID patientId) {
         return new ResponseDto(
-                true,
                 "Patient fetched",
                 patientMapper.toDto(
                         patientService.getPatientDetails(patientId)
@@ -55,7 +53,6 @@ public class PatientController {
     @GetMapping("/{patientId}/appointments")
     public ResponseDto getAppointments(@PathVariable UUID patientId) {
         return new ResponseDto(
-                true,
                 "Appointments fetched",
                 patientService.getAppointments(patientId)
                         .stream()
@@ -70,7 +67,6 @@ public class PatientController {
             @PathVariable UUID appointmentId
     ) {
         return new ResponseDto(
-                true,
                 "Appointment trail",
                 patientService.getAppointmentTrail(patientId, appointmentId)
                         .stream()
@@ -86,7 +82,6 @@ public class PatientController {
             @RequestParam(required = false) String doctorFullName
     ) {
         return new ResponseDto(
-                true,
                 "Doctors fetched",
                 patientService.getAvailableDoctors(
                         specialization,

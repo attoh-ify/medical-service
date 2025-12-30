@@ -55,6 +55,9 @@ public class PatientServiceImpl implements PatientService {
             DayOfTheWeek requestedDay,
             String doctorFullName
     ) {
+        if (specialization == null) {
+            throw new IllegalArgumentException("Specialization required.");
+        }
         List<Doctor> doctors = doctorRepository.searchDoctors(specialization, requestedDay, doctorFullName);
         List<DayGroupedAvailabilityResponse> finalResponse = new ArrayList<>();
 

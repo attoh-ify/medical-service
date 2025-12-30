@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface AppointmentService {
     Appointment bookAppointment(RequestAppointmentDto dto);
-    Appointment cancelAppointment(UUID appointmentId, UUID actorId);
+    Appointment cancelAppointment(UUID appointmentId, UUID doctorId);
     void beginAppointment(UUID appointmentId, UUID doctorId);
     Appointment completeAppointment(
             UUID appointmentId,

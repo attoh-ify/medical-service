@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/medical-service/appointments")
+@RequestMapping("/api/appointments")
 public class AppointmentController {
     private final AppointmentService appointmentService;
     private final AppointmentMapper appointmentMapper;
@@ -26,7 +26,6 @@ public class AppointmentController {
     @PostMapping
     public ResponseDto book(@RequestBody RequestAppointmentDto dto) {
         return new ResponseDto(
-                true,
                 "Appointment booked",
                 appointmentMapper.toDto(
                         appointmentService.bookAppointment(dto)
@@ -34,14 +33,13 @@ public class AppointmentController {
         );
     }
 
-    @PatchMapping("/{appointmentId}/cancel")
+    @PatchMapping("/{appointmentId}/cancel/{doctorId}")
     public ResponseDto cancel(@PathVariable UUID appointmentId,
-                              @RequestParam UUID actorId) {
+                              @PathVariable UUID doctorId) {
         return new ResponseDto(
-                true,
                 "Appointment cancelled",
                 appointmentMapper.toDto(
-                        appointmentService.cancelAppointment(appointmentId, actorId)
+                        appointmentService.cancelAppointment(appointmentId, doctorId)
                 )
         );
     }
@@ -52,17 +50,16 @@ public class AppointmentController {
             @RequestParam UUID doctorId
     ) {
         appointmentService.beginAppointment(appointmentId, doctorId);
-        return new ResponseDto(true, "Appointment started", null);
+        return new ResponseDto("Appointment started", null);
     }
 
-    @PatchMapping("/{appointmentId}/complete")
+    @PatchMapping("/{appointmentId}/complete/{doctorId}")
     public ResponseDto complete(
             @PathVariable UUID appointmentId,
-            @RequestParam UUID doctorId,
+            @PathVariable UUID doctorId,
             @RequestBody RecordAppointmentResult result
     ) {
         return new ResponseDto(
-                true,
                 "Appointment completed",
                 appointmentMapper.toDto(
                         appointmentService.completeAppointment(
@@ -80,7 +77,6 @@ public class AppointmentController {
             @RequestBody RequestAppointmentDto appointmentDto
     ) {
         return new ResponseDto(
-                true,
                 "Follow-up booked",
                 appointmentMapper.toDto(
                         appointmentService.bookFollowUp(appointmentId, appointmentDto)

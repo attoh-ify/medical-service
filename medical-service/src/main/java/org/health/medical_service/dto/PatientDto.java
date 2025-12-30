@@ -15,6 +15,5 @@ public record PatientDto(
         Gender gender,
         String address,
         List<AppointmentDto> appointments
-
 ) {
 }

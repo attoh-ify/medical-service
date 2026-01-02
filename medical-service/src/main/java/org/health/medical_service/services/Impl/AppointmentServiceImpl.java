@@ -4,13 +4,11 @@ import org.health.medical_service.dto.RecordAppointmentResult;
 import org.health.medical_service.dto.RequestAppointmentDto;
 import org.health.medical_service.dto.TimeRange;
 import org.health.medical_service.entities.*;
-import org.health.medical_service.events.AppointmentCreated;
 import org.health.medical_service.repositories.AppointmentRepository;
 import org.health.medical_service.repositories.DoctorRepository;
 import org.health.medical_service.repositories.PatientRepository;
 import org.health.medical_service.services.AppointmentService;
 import org.health.medical_service.utils.helpers;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +20,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
-    private final ApplicationEventPublisher publisher;
 
-    public AppointmentServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, AppointmentRepository appointmentRepository, ApplicationEventPublisher publisher) {
+    public AppointmentServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, AppointmentRepository appointmentRepository) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.appointmentRepository = appointmentRepository;
-        this.publisher = publisher;
     }
 
     @Transactional
@@ -46,7 +42,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         helpers.validateAppointmentTime(dto.appointmentTime(), freeRanges);
 
-        Appointment appointment = appointmentRepository.save(
+        return appointmentRepository.save(
                 new Appointment(
                         null,
                         patient,
@@ -58,8 +54,6 @@ public class AppointmentServiceImpl implements AppointmentService {
                         null
                 )
         );
-//        publisher.publishEvent(new AppointmentCreated(appointment));
-        return appointment;
     }
 
     @Transactional

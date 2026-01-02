@@ -40,12 +40,12 @@ public class PatientController {
         );
     }
 
-    @GetMapping("/{patientId}")
-    public ResponseDto getDetails(@PathVariable UUID patientId) {
+    @GetMapping("/{email}")
+    public ResponseDto getDetails(@PathVariable String email) {
         return new ResponseDto(
                 "Patient fetched",
                 patientMapper.toDto(
-                        patientService.getPatientDetails(patientId)
+                        patientService.getPatientDetails(email)
                 )
         );
     }

@@ -8,4 +8,8 @@ public record ResponseDto(
     public ResponseDto(String message, Object data) {
         this(true, message, data);
     }
+
+    public ResponseDto(String message) {
+        this(true, message, null);
+    }
 }

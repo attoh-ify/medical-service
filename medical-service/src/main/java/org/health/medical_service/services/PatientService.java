@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface PatientService {
     Patient registerPatient(Patient patient);
-    Patient getPatientDetails(UUID patientId);
+    Patient getPatientDetails(String email);
     List<DayGroupedAvailabilityResponse> getAvailableDoctors(
             Specialization specialization,
             DayOfTheWeek day,

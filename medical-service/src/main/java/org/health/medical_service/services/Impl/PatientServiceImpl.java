@@ -2,16 +2,12 @@ package org.health.medical_service.services.Impl;
 
 import org.health.medical_service.dto.DayGroupedAvailabilityResponse;
 import org.health.medical_service.dto.DoctorDailySlotResponse;
-import org.health.medical_service.dto.RequestAppointmentDto;
 import org.health.medical_service.dto.TimeRange;
 import org.health.medical_service.entities.*;
-import org.health.medical_service.events.AppointmentCreated;
-import org.health.medical_service.events.PatientCreated;
 import org.health.medical_service.repositories.AppointmentRepository;
 import org.health.medical_service.repositories.DoctorRepository;
 import org.health.medical_service.repositories.PatientRepository;
 import org.health.medical_service.services.PatientService;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.health.medical_service.utils.helpers;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,28 +20,24 @@ public class PatientServiceImpl implements PatientService {
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
-    private final ApplicationEventPublisher publisher;
 
-    public PatientServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, AppointmentRepository appointmentRepository, ApplicationEventPublisher publisher) {
+    public PatientServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, AppointmentRepository appointmentRepository) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.appointmentRepository = appointmentRepository;
-        this.publisher = publisher;
     }
 
     @Override
     public Patient registerPatient(Patient patient) {
         validatePatient(patient);
-        Patient createdPatient = patientRepository.save(patient);
-//        publisher.publishEvent(new PatientCreated(createdPatient));
-        return createdPatient;
+        return patientRepository.save(patient);
     }
 
     @Transactional(readOnly = true)
     @Override
-    public Patient getPatientDetails(UUID patientId) {
-        return patientRepository.findById(patientId)
-                .orElseThrow(() -> new IllegalArgumentException("Patient with this ID is not registered."));
+    public Patient getPatientDetails(String email) {
+        return patientRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("Patient with this email is not registered."));
     }
 
     @Transactional(readOnly = true)

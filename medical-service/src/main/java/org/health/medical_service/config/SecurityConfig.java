@@ -37,7 +37,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/users/register", "/api/users/login")  // exclude these routes from needing authentication
                                 .permitAll()
                                 .anyRequest().authenticated())  // no one should be able to access the resources without authentication
-                // .formLogin(Customizer.withDefaults())  // enable form login
+                .formLogin(Customizer.withDefaults())  // enable form login
                 .httpBasic(Customizer.withDefaults())  // enable http basic authentication
                 .sessionManagement(
                         session ->

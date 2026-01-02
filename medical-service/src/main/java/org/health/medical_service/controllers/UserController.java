@@ -1,5 +1,6 @@
 package org.health.medical_service.controllers;
 
+import org.health.medical_service.dto.LoginDto;
 import org.health.medical_service.dto.LoginResponseDto;
 import org.health.medical_service.dto.ResponseDto;
 import org.health.medical_service.dto.UserDto;
@@ -31,8 +32,8 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseDto loginUser(@RequestBody UserDto dto) {
-        String token = userService.loginUser(userMapper.fromDto(dto));
+    public ResponseDto loginUser(@RequestBody LoginDto dto) {
+        String token = userService.loginUser(dto);
         return new ResponseDto(
                 "User logged in",
                 new LoginResponseDto(token)

@@ -1,5 +1,6 @@
 package org.health.medical_service.services.Impl;
 
+import org.health.medical_service.dto.LoginDto;
 import org.health.medical_service.entities.User;
 import org.health.medical_service.repositories.UserRepository;
 import org.health.medical_service.services.UserService;
@@ -39,12 +40,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String loginUser(User user) {
+    public String loginUser(LoginDto user) {
         Authentication authentication =
                 authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+                        new UsernamePasswordAuthenticationToken(user.email(), user.password()));
         if (authentication.isAuthenticated()) {
-            return jwtService.generateToken(user.getEmail());
+            return jwtService.generateToken(user.email());
         }
         throw new IllegalArgumentException("Invalid username or password.");
     }

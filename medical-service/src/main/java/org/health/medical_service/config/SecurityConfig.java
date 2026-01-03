@@ -18,9 +18,12 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebSecurity // Enables Spring Security filter chain integration
 public class SecurityConfig {
+    // Custom UserDetailsService used by Spring Security to load users from DB
     private final MyUserDetailsService userDetailsService;
+
+    // Custom JWT filter that validates JWT on each request
     private final JwtFilter jwtFilter;
 
     public SecurityConfig(MyUserDetailsService userDetailsService, JwtFilter jwtFilter) {
@@ -28,32 +31,75 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
+    /**
+     * Defines the main Spring Security filter chain.
+     * This controls:
+     *  - which routes require authentication
+     *  - which authentication mechanisms are enabled
+     *  - session behavior
+     *  - custom filters (JWT)
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable)  // disable csrf
+                // Disable CSRF protection (safe because we use stateless JWTs, not sessions)
+                .csrf(AbstractHttpConfigurer::disable)
+
+                // Authorization rules for HTTP requests
                 .authorizeHttpRequests(
                         request -> request
-                                .requestMatchers("/api/users/register", "/api/users/login")  // exclude these routes from needing authentication
+                                // Public endpoints (no authentication required)
+                                .requestMatchers("/api/users/register", "/api/users/login")
                                 .permitAll()
-                                .anyRequest().authenticated())  // no one should be able to access the resources without authentication
-                .formLogin(Customizer.withDefaults())  // enable form login
-                .httpBasic(Customizer.withDefaults())  // enable http basic authentication
+
+                                // All other endpoints require authentication
+                                .anyRequest().authenticated()
+                )
+
+                // Enables default Spring Security form login (useful for testing / fallback)
+                .formLogin(Customizer.withDefaults())
+
+                // Enables HTTP Basic authentication (mainly for debugging / tools like Postman)
+                .httpBasic(Customizer.withDefaults())
+
+                // Configure session management
                 .sessionManagement(
                         session ->
-                                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // make http stateless
+                                // Do not create or use HTTP sessions
+                                // Each request must be authenticated independently (JWT)
+                                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // Register JWT filter BEFORE username/password authentication filter
+                // This ensures JWT is processed first on every request
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Build the security filter chain
                 .build();
     }
 
+    /**
+     * AuthenticationProvider responsible for:
+     *  - loading users via UserDetailsService
+     *  - validating passwords using BCrypt
+     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setPasswordEncoder(new BCryptPasswordEncoder(12));  // use bcrypt password encoder
+
+        // Password encoder used to compare raw password with hashed password in DB
+        provider.setPasswordEncoder(new BCryptPasswordEncoder(12));
+
+        // Custom user lookup logic (database-backed)
         provider.setUserDetailsService(userDetailsService);
+
         return provider;
     }
 
+    /**
+     * AuthenticationManager used during login
+     * Delegates authentication to configured AuthenticationProviders
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();

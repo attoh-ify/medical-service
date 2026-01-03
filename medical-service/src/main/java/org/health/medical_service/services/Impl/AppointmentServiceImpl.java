@@ -4,11 +4,16 @@ import org.health.medical_service.dto.RecordAppointmentResult;
 import org.health.medical_service.dto.RequestAppointmentDto;
 import org.health.medical_service.dto.TimeRange;
 import org.health.medical_service.entities.*;
+import org.health.medical_service.exceptions.BadRequestException;
+import org.health.medical_service.exceptions.ForbiddenException;
+import org.health.medical_service.exceptions.NotFoundException;
 import org.health.medical_service.repositories.AppointmentRepository;
 import org.health.medical_service.repositories.DoctorRepository;
 import org.health.medical_service.repositories.PatientRepository;
 import org.health.medical_service.services.AppointmentService;
 import org.health.medical_service.utils.helpers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +26,14 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
 
-    public AppointmentServiceImpl(PatientRepository patientRepository, DoctorRepository doctorRepository, AppointmentRepository appointmentRepository) {
+    private static final Logger log =
+            LoggerFactory.getLogger(AppointmentServiceImpl.class);
+
+    public AppointmentServiceImpl(
+            PatientRepository patientRepository,
+            DoctorRepository doctorRepository,
+            AppointmentRepository appointmentRepository
+    ) {
         this.patientRepository = patientRepository;
         this.doctorRepository = doctorRepository;
         this.appointmentRepository = appointmentRepository;
@@ -30,10 +42,20 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Transactional
     @Override
     public Appointment bookAppointment(RequestAppointmentDto dto) {
+        log.info("Booking appointment patientId={} doctorId={} time={}",
+                dto.patientId(), dto.doctorId(), dto.appointmentTime());
+
         Patient patient = patientRepository.findById(dto.patientId())
-                .orElseThrow(() -> new IllegalArgumentException("Patient not found."));
+                .orElseThrow(() -> {
+                    log.warn("Patient not found patientId={}", dto.patientId());
+                    return new NotFoundException("Patient not found.");
+                });
+
         Doctor doctor = doctorRepository.findById(dto.doctorId())
-                .orElseThrow(() -> new IllegalArgumentException("Doctor not found."));
+                .orElseThrow(() -> {
+                    log.warn("Doctor not found doctorId={}", dto.doctorId());
+                    return new NotFoundException("Doctor not found.");
+                });
 
         List<TimeRange> freeRanges =
                 helpers.calculateFreeTimeRanges(
@@ -42,7 +64,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         helpers.validateAppointmentTime(dto.appointmentTime(), freeRanges);
 
-        return appointmentRepository.save(
+        Appointment saved = appointmentRepository.save(
                 new Appointment(
                         null,
                         patient,
@@ -54,45 +76,76 @@ public class AppointmentServiceImpl implements AppointmentService {
                         null
                 )
         );
+
+        log.info("Appointment booked appointmentId={}", saved.getId());
+        return saved;
     }
 
     @Transactional
     @Override
     public Appointment cancelAppointment(UUID appointmentId, UUID doctorId) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
+        log.info("Cancelling appointment appointmentId={} doctorId={}",
+                appointmentId, doctorId);
 
-        boolean isDoctor = appointment.getDoctor().getId().equals(doctorId);
-        if (!isDoctor) {
-            throw new IllegalArgumentException("Doctor not authorized for this appointment");
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> {
+                    log.warn("Appointment not found appointmentId={}", appointmentId);
+                    throw new NotFoundException("Appointment not found");
+                });
+
+        if (!appointment.getDoctor().getId().equals(doctorId)) {
+            log.warn("Unauthorized cancellation attempt appointmentId={} doctorId={}",
+                    appointmentId, doctorId);
+            throw new ForbiddenException("Doctor not authorized for this appointment");
         }
 
         if (appointment.getStatus() != AppointmentStatus.AWAITING) {
-            throw new IllegalArgumentException("Appointment can no longer be updated.");
+            log.warn("Invalid appointment state appointmentId={} status={}",
+                    appointmentId, appointment.getStatus());
+            throw new BadRequestException("Appointment can no longer be updated.");
         }
+
         appointment.setStatus(AppointmentStatus.CANCELLED);
-        return appointmentRepository.save(appointment);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        log.info("Appointment cancelled appointmentId={}", appointmentId);
+        return saved;
     }
 
     @Transactional
     @Override
     public void beginAppointment(UUID appointmentId, UUID doctorId) {
+        log.info("Beginning appointment appointmentId={} doctorId={}",
+                appointmentId, doctorId);
+
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Appointment not found."));
+                .orElseThrow(() -> {
+                    log.warn("Appointment not found appointmentId={}", appointmentId);
+                    return new NotFoundException("Appointment not found.");
+                });
 
         if (!appointment.getDoctor().getId().equals(doctorId)) {
-            throw new IllegalArgumentException("Doctor does not match appointment");
+            log.warn("Doctor mismatch appointmentId={} doctorId={}",
+                    appointmentId, doctorId);
+            throw new ForbiddenException("Doctor does not match appointment");
         }
 
         if (appointment.getStatus() != AppointmentStatus.AWAITING) {
-            throw new IllegalArgumentException("Appointment is not awaiting");
+            log.warn("Invalid appointment state appointmentId={} status={}",
+                    appointmentId, appointment.getStatus());
+            throw new BadRequestException("Appointment is not awaiting");
         }
 
         if (appointment.getAppointmentTime().isAfter(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Appointment time has not arrived");
+            log.warn("Appointment time not reached appointmentId={} time={}",
+                    appointmentId, appointment.getAppointmentTime());
+            throw new BadRequestException("Appointment time has not arrived");
         }
+
         appointment.setStatus(AppointmentStatus.IN_PROGRESS);
         appointmentRepository.save(appointment);
+
+        log.info("Appointment started appointmentId={}", appointmentId);
     }
 
     @Transactional
@@ -102,44 +155,79 @@ public class AppointmentServiceImpl implements AppointmentService {
             UUID doctorId,
             RecordAppointmentResult result
     ) {
+        log.info("Completing appointment appointmentId={} doctorId={}",
+                appointmentId, doctorId);
+
         Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Appointment not found"));
+                .orElseThrow(() -> {
+                    log.warn("Appointment not found appointmentId={}", appointmentId);
+                    return new NotFoundException("Appointment not found");
+                });
 
         if (!appointment.getDoctor().getId().equals(doctorId)) {
-            throw new IllegalArgumentException("Doctor does not match appointment");
+            log.warn("Doctor mismatch appointmentId={} doctorId={}",
+                    appointmentId, doctorId);
+            throw new ForbiddenException("Doctor does not match appointment");
         }
 
         if (appointment.getStatus() != AppointmentStatus.IN_PROGRESS) {
-            throw new IllegalArgumentException("Appointment not in progress");
+            log.warn("Invalid appointment state appointmentId={} status={}",
+                    appointmentId, appointment.getStatus());
+            throw new BadRequestException("Appointment not in progress");
         }
 
         if (helpers.isBlank(result.result())) {
-            throw new IllegalArgumentException("Result is required");
+            log.warn("Empty result appointmentId={}", appointmentId);
+            throw new BadRequestException("Result is required");
         }
 
         appointment.setResult(result.result());
         appointment.setStatus(AppointmentStatus.COMPLETED);
-        return appointmentRepository.save(appointment);
+
+        Appointment saved = appointmentRepository.save(appointment);
+
+        log.info("Appointment completed appointmentId={}", appointmentId);
+        return saved;
     }
 
     @Transactional
     @Override
     public Appointment bookFollowUp(UUID appointmentId, RequestAppointmentDto appointmentDto) {
+        log.info("Booking follow-up appointment previousAppointmentId={}",
+                appointmentId);
+
         Appointment previous = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new IllegalArgumentException("Appointment not found."));
+                .orElseThrow(() -> {
+                    log.warn("Previous appointment not found appointmentId={}",
+                            appointmentId);
+                    return new NotFoundException("Appointment not found.");
+                });
 
         if (previous.getStatus() != AppointmentStatus.COMPLETED) {
-            throw new IllegalArgumentException("Follow-up requires completed appointment");
+            log.warn("Follow-up requested for non-completed appointment appointmentId={} status={}",
+                    appointmentId, previous.getStatus());
+            throw new BadRequestException("Follow-up requires completed appointment");
         }
 
         Patient patient = patientRepository.findById(appointmentDto.patientId())
-                .orElseThrow(() -> new IllegalArgumentException("Patient not found."));
+                .orElseThrow(() -> {
+                    log.warn("Patient not found patientId={}",
+                            appointmentDto.patientId());
+                    return new NotFoundException("Patient not found.");
+                });
+
         Doctor doctor = doctorRepository.findById(appointmentDto.doctorId())
-                .orElseThrow(() -> new IllegalArgumentException("Doctor not found."));
+                .orElseThrow(() -> {
+                    log.warn("Doctor not found doctorId={}",
+                            appointmentDto.doctorId());
+                    return new NotFoundException("Doctor not found.");
+                });
 
         if (!previous.getPatient().getId().equals(patient.getId())
                 || !previous.getDoctor().getId().equals(doctor.getId())) {
-            throw new IllegalArgumentException("Appointment mismatch");
+            log.warn("Appointment mismatch follow-up previousAppointmentId={}",
+                    appointmentId);
+            throw new BadRequestException("Appointment mismatch");
         }
 
         List<TimeRange> freeRanges =
@@ -147,7 +235,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                         doctor, appointmentDto.appointmentTime().toLocalDate(), 60
                 );
 
-        helpers.validateAppointmentTime(appointmentDto.appointmentTime(), freeRanges);
+        helpers.validateAppointmentTime(
+                appointmentDto.appointmentTime(), freeRanges
+        );
 
         Appointment followUpAppointment = appointmentRepository.save(
                 new Appointment(
@@ -161,9 +251,13 @@ public class AppointmentServiceImpl implements AppointmentService {
                         null
                 )
         );
+
         previous.setFollowUpAppointment(followUpAppointment.getId());
         appointmentRepository.save(previous);
-//        publisher.publishEvent(new AppointmentCreated(followUpAppointment));
+
+        log.info("Follow-up appointment booked followUpAppointmentId={} previousAppointmentId={}",
+                followUpAppointment.getId(), appointmentId);
+
         return followUpAppointment;
     }
 }

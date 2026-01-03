@@ -9,6 +9,10 @@ public record ResponseDto(
         this(true, message, data);
     }
 
+    public ResponseDto(boolean status, String message) {
+        this(status, message, null);
+    }
+
     public ResponseDto(String message) {
         this(true, message, null);
     }

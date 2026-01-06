@@ -1,6 +1,7 @@
 package org.health.medical_service.events;
 
 import org.health.medical_service.entities.Appointment;
+import org.health.medical_service.entities.AppointmentResult;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -9,7 +10,7 @@ public class AppointmentCreated {
     private final UUID appointmentId;
     private final LocalDateTime appointmentTime;
     private final String status;
-    private final String result;
+    private final AppointmentResult result;
     private final String appointmentType;
     private final UUID followUpAppointmentId;
 
@@ -34,7 +35,7 @@ public class AppointmentCreated {
         return status;
     }
 
-    public String getResult() {
+    public AppointmentResult getResult() {
         return result;
     }
 

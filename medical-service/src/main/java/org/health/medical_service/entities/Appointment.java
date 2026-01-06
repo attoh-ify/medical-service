@@ -34,8 +34,8 @@ public class Appointment {
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status;
 
-    @Column(nullable = true)
-    private String result;
+    @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
+    private AppointmentResult result;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -52,7 +52,7 @@ public class Appointment {
 
     public Appointment() {}
 
-    public Appointment(UUID id, Patient patient, Doctor doctor, LocalDateTime appointmentTime, AppointmentStatus status, String result, AppointmentType appointmentType, UUID followUpAppointmentId) {
+    public Appointment(UUID id, Patient patient, Doctor doctor, LocalDateTime appointmentTime, AppointmentStatus status, AppointmentResult result, AppointmentType appointmentType, UUID followUpAppointmentId) {
         this.id = id;
         this.patient = patient;
         this.doctor = doctor;
@@ -114,11 +114,11 @@ public class Appointment {
         this.status = status;
     }
 
-    public String getResult() {
+    public AppointmentResult getResult() {
         return result;
     }
 
-    public void setResult(String result) {
+    public void setResult(AppointmentResult result) {
         this.result = result;
     }
 

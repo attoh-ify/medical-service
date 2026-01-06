@@ -1,6 +1,7 @@
 package org.health.medical_service.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.health.medical_service.entities.AppointmentResult;
 import org.health.medical_service.entities.AppointmentStatus;
 import org.health.medical_service.entities.AppointmentType;
 
@@ -28,10 +29,10 @@ public record AppointmentDto(
         AppointmentStatus status,
 
         @Schema(
-                description = "Doctor's notes or outcome of the appointment",
-                example = "Patient diagnosed with mild hypertension"
+                description = "Detailed result of the appointment, including notes, prescriptions, and other outcome details"
         )
-        String result,
+        AppointmentResult result,
+
 
         @Schema(
                 description = "Type of appointment",

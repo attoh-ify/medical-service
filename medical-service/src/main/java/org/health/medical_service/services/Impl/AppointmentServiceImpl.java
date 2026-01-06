@@ -1,6 +1,5 @@
 package org.health.medical_service.services.Impl;
 
-import org.health.medical_service.dto.RecordAppointmentResult;
 import org.health.medical_service.dto.RequestAppointmentDto;
 import org.health.medical_service.dto.TimeRange;
 import org.health.medical_service.entities.*;
@@ -153,7 +152,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     public Appointment completeAppointment(
             UUID appointmentId,
             UUID doctorId,
-            RecordAppointmentResult result
+            AppointmentResult result
     ) {
         log.info("Completing appointment appointmentId={} doctorId={}",
                 appointmentId, doctorId);
@@ -170,18 +169,24 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new ForbiddenException("Doctor does not match appointment");
         }
 
+        if (!appointment.getId().equals(result.getAppointment().getId())) {
+            log.warn("Appointment in the result does not match the target appointment. appointmentId={}, resultAppointmentId={}",
+                    appointment.getId(), result.getAppointment().getId());
+            throw new BadRequestException(
+                    "The appointment ID in the result does not match the appointment being updated. " +
+                            "Please ensure the result references the correct appointment."
+            );
+        }
+
         if (appointment.getStatus() != AppointmentStatus.IN_PROGRESS) {
             log.warn("Invalid appointment state appointmentId={} status={}",
                     appointmentId, appointment.getStatus());
             throw new BadRequestException("Appointment not in progress");
         }
 
-        if (helpers.isBlank(result.result())) {
-            log.warn("Empty result appointmentId={}", appointmentId);
-            throw new BadRequestException("Result is required");
-        }
+        validateAppointmentResult(result);
 
-        appointment.setResult(result.result());
+        appointment.setResult(result);
         appointment.setStatus(AppointmentStatus.COMPLETED);
 
         Appointment saved = appointmentRepository.save(appointment);
@@ -259,5 +264,39 @@ public class AppointmentServiceImpl implements AppointmentService {
                 followUpAppointment.getId(), appointmentId);
 
         return followUpAppointment;
+    }
+
+    @Transactional
+    private void validateAppointmentResult(AppointmentResult result) {
+        log.debug("Validating appointment result id={}", result.getId());
+
+        if (helpers.isBlank(result.getSummary()))
+            throw new BadRequestException("Summary is required");
+
+        if (helpers.isBlank(result.getDetailedNotes()))
+            throw new BadRequestException("Detailed notes are required");
+
+        if (result.isFollowUpRecommended() && helpers.isBlank(result.getFollowUpInstructions()))
+            throw new BadRequestException("Follow-up instructions are required if follow-up is recommended");
+
+        // Optional fields length checks
+        if (result.getSummary() != null && result.getSummary().length() > 500)
+            throw new BadRequestException("Summary cannot exceed 500 characters");
+
+        if (result.getDetailedNotes() != null && result.getDetailedNotes().length() > 5000)
+            throw new BadRequestException("Detailed notes cannot exceed 5000 characters");
+
+        if (result.getFollowUpInstructions() != null && result.getFollowUpInstructions().length() > 500)
+            throw new BadRequestException("Follow-up instructions cannot exceed 500 characters");
+
+        if (result.getPrescriptions() != null && result.getPrescriptions().length() > 1000)
+            throw new BadRequestException("Prescriptions cannot exceed 1000 characters");
+
+        if (result.getLabTests() != null && result.getLabTests().length() > 1000)
+            throw new BadRequestException("Lab tests cannot exceed 1000 characters");
+
+        // Ensure associated appointment exists
+        if (result.getAppointment() == null)
+            throw new BadRequestException("Associated appointment is required");
     }
 }

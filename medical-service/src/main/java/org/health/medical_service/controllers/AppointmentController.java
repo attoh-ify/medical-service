@@ -5,10 +5,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.health.medical_service.dto.RecordAppointmentResult;
+import org.health.medical_service.dto.AppointmentResultDto;
 import org.health.medical_service.dto.RequestAppointmentDto;
 import org.health.medical_service.dto.ResponseDto;
+import org.health.medical_service.entities.AppointmentResult;
 import org.health.medical_service.mappers.AppointmentMapper;
+import org.health.medical_service.mappers.AppointmentResultMapper;
 import org.health.medical_service.services.AppointmentService;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,13 +25,16 @@ import java.util.UUID;
 public class AppointmentController {
     private final AppointmentService appointmentService;
     private final AppointmentMapper appointmentMapper;
+    private final AppointmentResultMapper appointmentResultMapper;
 
     public AppointmentController(
             AppointmentService appointmentService,
-            AppointmentMapper appointmentMapper
+            AppointmentMapper appointmentMapper,
+            AppointmentResultMapper appointmentResultMapper
     ) {
         this.appointmentService = appointmentService;
         this.appointmentMapper = appointmentMapper;
+        this.appointmentResultMapper = appointmentResultMapper;
     }
 
     @PostMapping
@@ -143,7 +148,7 @@ public class AppointmentController {
                     description = "Medical consultation outcome and notes",
                     required = true
             )
-            @RequestBody RecordAppointmentResult result
+            @RequestBody AppointmentResultDto result
     ) {
         return new ResponseDto(
                 "Appointment completed",
@@ -151,7 +156,7 @@ public class AppointmentController {
                         appointmentService.completeAppointment(
                                 appointmentId,
                                 doctorId,
-                                result
+                                appointmentResultMapper.fromDto(result)
                         )
                 )
         );

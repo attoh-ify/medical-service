@@ -46,14 +46,22 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // Authorization rules for HTTP requests
-                .authorizeHttpRequests(
-                        request -> request
-                                // Public endpoints (no authentication required)
-                                .requestMatchers("/api/users/register", "/api/users/login")
-                                .permitAll()
+                .authorizeHttpRequests(request -> request
+                        // Swagger / OpenAPI (must be fully open)
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
 
-                                // All other endpoints require authentication
-                                .anyRequest().authenticated()
+                        // Public auth endpoints
+                        .requestMatchers(
+                                "/api/users/register",
+                                "/api/users/login"
+                        ).permitAll()
+
+                        // Everything else requires JWT
+                        .anyRequest().authenticated()
                 )
 
                 // Enables default Spring Security form login (useful for testing / fallback)

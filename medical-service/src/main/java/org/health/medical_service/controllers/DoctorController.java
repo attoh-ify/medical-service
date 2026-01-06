@@ -1,5 +1,8 @@
 package org.health.medical_service.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.health.medical_service.dto.DoctorAvailabilityDto;
 import org.health.medical_service.dto.DoctorDto;
 import org.health.medical_service.dto.ResponseDto;
@@ -13,6 +16,10 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/doctors")
+@Tag(
+        name = "Doctors",
+        description = "Doctor registration, availability management, and appointment access"
+)
 public class DoctorController {
     private final DoctorService doctorService;
     private final DoctorMapper doctorMapper;
@@ -32,7 +39,13 @@ public class DoctorController {
     }
 
     @PostMapping
-    public ResponseDto register(@RequestBody DoctorDto dto) {
+    @Operation(
+            summary = "Register a new doctor",
+            description = "Creates a new doctor profile in the system"
+    )
+    public ResponseDto register(
+            @RequestBody DoctorDto dto
+    ) {
         return new ResponseDto(
                 "Doctor registered",
                 doctorMapper.toDto(
@@ -44,8 +57,18 @@ public class DoctorController {
     }
 
     @PostMapping("/{doctorId}/availabilities")
+    @Operation(
+            summary = "Add doctor availability",
+            description = "Adds a new available time slot for a doctor"
+    )
     public ResponseDto addAvailability(
+            @Parameter(
+                    description = "Unique identifier of the doctor",
+                    example = "d2b7a15e-98f1-4e02-bc7a-5c3c2a3f4b91",
+                    required = true
+            )
             @PathVariable UUID doctorId,
+
             @RequestBody DoctorAvailabilityDto dto
     ) {
         return new ResponseDto(
@@ -60,7 +83,18 @@ public class DoctorController {
     }
 
     @GetMapping("/{doctorId}/appointments")
-    public ResponseDto getAppointments(@PathVariable UUID doctorId) {
+    @Operation(
+            summary = "Get all doctor appointments",
+            description = "Retrieves all appointments assigned to a doctor"
+    )
+    public ResponseDto getAppointments(
+            @Parameter(
+                    description = "Unique identifier of the doctor",
+                    example = "d2b7a15e-98f1-4e02-bc7a-5c3c2a3f4b91",
+                    required = true
+            )
+            @PathVariable UUID doctorId
+    ) {
         return new ResponseDto(
                 "Doctor appointments",
                 doctorService.getAppointments(doctorId)
@@ -71,7 +105,18 @@ public class DoctorController {
     }
 
     @GetMapping("/{doctorId}/appointments/next")
-    public ResponseDto getNext(@PathVariable UUID doctorId) {
+    @Operation(
+            summary = "Get next appointment",
+            description = "Retrieves the next upcoming appointment for a doctor"
+    )
+    public ResponseDto getNext(
+            @Parameter(
+                    description = "Unique identifier of the doctor",
+                    example = "d2b7a15e-98f1-4e02-bc7a-5c3c2a3f4b91",
+                    required = true
+            )
+            @PathVariable UUID doctorId
+    ) {
         return new ResponseDto(
                 "Next appointment",
                 appointmentMapper.toDto(

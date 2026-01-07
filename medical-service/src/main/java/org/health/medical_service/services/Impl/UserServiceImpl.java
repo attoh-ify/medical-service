@@ -2,6 +2,7 @@ package org.health.medical_service.services.Impl;
 
 import org.health.medical_service.dto.LoginDto;
 import org.health.medical_service.entities.User;
+import org.health.medical_service.entities.UserRole;
 import org.health.medical_service.exceptions.BadRequestException;
 import org.health.medical_service.repositories.UserRepository;
 import org.health.medical_service.services.UserService;
@@ -16,7 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class UserServiceImpl implements UserService {
+public class
+UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
     private final AuthenticationManager authenticationManager;
@@ -42,7 +44,16 @@ public class UserServiceImpl implements UserService {
 
         validateUser(user);
         user.setPassword(encoder.encode(user.getPassword()));
-        User saved = userRepository.save(user);
+        User saved = userRepository.save(
+                new User(
+                      null,
+                      user.getFullName(),
+                      user.getEmail(),
+                      user.getPhone(),
+                      user.getPassword(),
+                      UserRole.ADMIN
+                )
+        );
 
         log.info("User registered successfully userId={} email={}",
                 saved.getId(), saved.getEmail());
@@ -89,8 +100,12 @@ public class UserServiceImpl implements UserService {
 
         if (user.getId() != null)
             throw new BadRequestException("User ID is system generated");
+        if (helpers.isBlank(user.getFullName()))
+            throw new BadRequestException("Full name required");
         if (helpers.isBlank(user.getEmail()))
             throw new BadRequestException("Email required");
+        if (helpers.isBlank(user.getPhone()))
+            throw new BadRequestException("Phone number required");
         if (helpers.isBlank(user.getPassword()))
             throw new BadRequestException("Password required");
         if (user.getRole() == null)

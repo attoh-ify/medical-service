@@ -65,10 +65,10 @@ public class SecurityConfig {
                 )
 
                 // Enables default Spring Security form login (useful for testing / fallback)
-                .formLogin(Customizer.withDefaults())
+                // .formLogin(Customizer.withDefaults())
 
                 // Enables HTTP Basic authentication (mainly for debugging / tools like Postman)
-                .httpBasic(Customizer.withDefaults())
+                // .httpBasic(Customizer.withDefaults())
 
                 // Configure session management
                 .sessionManagement(

@@ -10,6 +10,7 @@ import org.health.medical_service.entities.Specialization;
 import org.health.medical_service.mappers.AppointmentMapper;
 import org.health.medical_service.mappers.PatientMapper;
 import org.health.medical_service.services.PatientService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -20,6 +21,7 @@ import java.util.UUID;
         name = "Patients",
         description = "Patient registration, profile management, and appointment access"
 )
+@PreAuthorize("hasRole('ADMIN')")
 public class PatientController {
     private final PatientService patientService;
     private final PatientMapper patientMapper;

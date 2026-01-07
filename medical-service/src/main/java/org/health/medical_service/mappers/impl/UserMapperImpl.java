@@ -11,7 +11,9 @@ public class UserMapperImpl implements UserMapper {
     public User fromDto(UserDto userDto) {
         return new User(
                 userDto.id(),
+                userDto.fullName(),
                 userDto.email(),
+                userDto.phone(),
                 userDto.password(),
                 userDto.role()
         );
@@ -21,7 +23,9 @@ public class UserMapperImpl implements UserMapper {
     public UserDto toDto(User user) {
         return new UserDto(
                 user.getId(),
+                user.getFullName(),
                 user.getEmail(),
+                user.getPhone(),
                 user.getPassword(),
                 user.getRole()
         );

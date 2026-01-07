@@ -12,6 +12,7 @@ import org.health.medical_service.entities.AppointmentResult;
 import org.health.medical_service.mappers.AppointmentMapper;
 import org.health.medical_service.mappers.AppointmentResultMapper;
 import org.health.medical_service.services.AppointmentService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -42,11 +43,7 @@ public class AppointmentController {
             summary = "Book a new appointment",
             description = "Creates a new medical appointment for a patient with a specified doctor and time slot."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Appointment booked"),
-            @ApiResponse(responseCode = "400", description = "Invalid appointment data"),
-            @ApiResponse(responseCode = "409", description = "Appointment slot already taken")
-    })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseDto book(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Appointment booking details",
@@ -67,11 +64,7 @@ public class AppointmentController {
             summary = "Cancel an appointment",
             description = "Cancels an existing appointment. Only the assigned doctor is allowed to cancel it."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Appointment cancelled"),
-            @ApiResponse(responseCode = "403", description = "Doctor not authorized to cancel this appointment"),
-            @ApiResponse(responseCode = "404", description = "Appointment not found")
-    })
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseDto cancel(
             @Parameter(
                     description = "Unique identifier of the appointment",
@@ -98,11 +91,7 @@ public class AppointmentController {
             summary = "Begin an appointment",
             description = "Marks an appointment as in progress. Can only be started by the assigned doctor."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Appointment successfully started"),
-            @ApiResponse(responseCode = "409", description = "Appointment already started or already completed"),
-            @ApiResponse(responseCode = "403", description = "Doctor not authorized to begin this appointment")
-    })
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseDto begin(
             @Parameter(
                     description = "Unique identifier of the appointment",
@@ -125,12 +114,7 @@ public class AppointmentController {
             summary = "Complete an appointment",
             description = "Completes an appointment and records the medical consultation result."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Appointment successfully completed"),
-            @ApiResponse(responseCode = "400", description = "Invalid consultation result data"),
-            @ApiResponse(responseCode = "404", description = "Appointment not found"),
-            @ApiResponse(responseCode = "403", description = "Doctor not authorized to complete this appointment")
-    })
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseDto complete(
             @Parameter(
                     description = "Unique identifier of the appointment",
@@ -167,11 +151,7 @@ public class AppointmentController {
             summary = "Book a follow-up appointment",
             description = "Creates a follow-up appointment linked to a previously completed appointment."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Follow-up appointment successfully booked"),
-            @ApiResponse(responseCode = "409", description = "Original appointment has not been completed"),
-            @ApiResponse(responseCode = "404", description = "Original appointment not found")
-    })
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseDto followUp(
             @Parameter(
                     description = "Unique identifier of the completed appointment",

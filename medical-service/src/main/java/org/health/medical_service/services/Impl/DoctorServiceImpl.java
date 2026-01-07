@@ -5,6 +5,7 @@ import org.health.medical_service.exceptions.BadRequestException;
 import org.health.medical_service.repositories.AppointmentRepository;
 import org.health.medical_service.repositories.DoctorAvailabilityRepository;
 import org.health.medical_service.repositories.DoctorRepository;
+import org.health.medical_service.repositories.UserRepository;
 import org.health.medical_service.services.DoctorService;
 import org.health.medical_service.utils.helpers;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ public class DoctorServiceImpl implements DoctorService {
     private final DoctorRepository doctorRepository;
     private final DoctorAvailabilityRepository doctorAvailabilityRepository;
     private final AppointmentRepository appointmentRepository;
+    private final UserRepository userRepository;
 
     private static final Logger log =
             LoggerFactory.getLogger(DoctorServiceImpl.class);
@@ -26,21 +28,43 @@ public class DoctorServiceImpl implements DoctorService {
     public DoctorServiceImpl(
             DoctorRepository doctorRepository,
             DoctorAvailabilityRepository doctorAvailabilityRepository,
-            AppointmentRepository appointmentRepository
+            AppointmentRepository appointmentRepository, UserRepository userRepository
     ) {
         this.doctorRepository = doctorRepository;
         this.doctorAvailabilityRepository = doctorAvailabilityRepository;
         this.appointmentRepository = appointmentRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
+    @Transactional
     public Doctor registerDoctor(Doctor doctor) {
         log.info("Registering doctor email={} specialization={}",
                 doctor.getEmail(), doctor.getSpecialization());
 
+        User user = userRepository.findByEmail(doctor.getEmail())
+                .orElseThrow(() -> {
+                    log.warn("User not found email={}. Doctors can only be created for already registered users", doctor.getEmail());
+                    return new BadRequestException("User not found");
+                });
+
+        user.setRole(UserRole.DOCTOR);
+        userRepository.save(user);
+
         validateDoctor(doctor);
 
-        Doctor saved = doctorRepository.save(doctor);
+        Doctor saved = doctorRepository.save(
+                new Doctor(
+                        null,
+                    user.getFullName(),
+                    user.getEmail(),
+                    user.getPhone(),
+                    doctor.getSpecialization(),
+                    doctor.getBio(),
+                    null,
+                    null
+                )
+        );
 
         log.info("Doctor registered successfully doctorId={}", saved.getId());
         return saved;
@@ -115,15 +139,6 @@ public class DoctorServiceImpl implements DoctorService {
     private void validateDoctor(Doctor d) {
         if (d.getId() != null)
             throw new BadRequestException("Doctor ID is system generated");
-
-        if (helpers.isBlank(d.getFullName()))
-            throw new BadRequestException("Full name required");
-
-        if (helpers.isBlank(d.getEmail()))
-            throw new BadRequestException("Email required");
-
-        if (helpers.isBlank(d.getPhone()))
-            throw new BadRequestException("Phone required");
 
         if (d.getSpecialization() == null)
             throw new BadRequestException("Specialization required");

@@ -13,8 +13,14 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "full_name", nullable = false, unique = true)
+    private String fullName;
+
     @Column(name = "email", nullable = false)
     private String email;
+
+    @Column(name = "phone", unique = true, nullable = false)
+    private String phone;
 
     @Column(name = "password", unique = false, updatable = true, nullable = false)
     private String password;
@@ -31,9 +37,11 @@ public class User {
 
     public User() {}
 
-    public User(UUID id, String email, String password, UserRole role) {
+    public User(UUID id, String fullName, String email, String phone, String password, UserRole role) {
         this.id = id;
+        this.fullName = fullName;
         this.email = email;
+        this.phone = phone;
         this.password = password;
         this.role = role;
     }
@@ -80,6 +88,14 @@ public class User {
     public void setRole(UserRole role) {
         this.role = role;
     }
+
+    public String getFullName() {return fullName;}
+
+    public void setFullName(String fullName) {this.fullName = fullName;}
+
+    public String getPhone() {return phone;}
+
+    public void setPhone(String phone) {this.phone = phone;}
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

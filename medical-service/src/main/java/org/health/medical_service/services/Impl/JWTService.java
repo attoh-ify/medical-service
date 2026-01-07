@@ -75,7 +75,7 @@ public class JWTService {
     public boolean validateToken(String token, UserDetails userDetails) {
         log.debug("Validating JWT token for user={}", userDetails.getUsername());
 
-        final String userName = extractUsername(token);
+        final String userName = userDetails.getUsername();
 
         boolean valid = userName.equals(extractUsername(token))
                 && !isTokenExpired(token);

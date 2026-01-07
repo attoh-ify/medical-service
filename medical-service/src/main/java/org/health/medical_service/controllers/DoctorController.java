@@ -10,6 +10,7 @@ import org.health.medical_service.mappers.AppointmentMapper;
 import org.health.medical_service.mappers.DoctorAvailabilityMapper;
 import org.health.medical_service.mappers.DoctorMapper;
 import org.health.medical_service.services.DoctorService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -43,6 +44,7 @@ public class DoctorController {
             summary = "Register a new doctor",
             description = "Creates a new doctor profile in the system"
     )
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseDto register(
             @RequestBody DoctorDto dto
     ) {
@@ -61,6 +63,7 @@ public class DoctorController {
             summary = "Add doctor availability",
             description = "Adds a new available time slot for a doctor"
     )
+    @PreAuthorize("hasRole('DOCTOR')")
     public ResponseDto addAvailability(
             @Parameter(
                     description = "Unique identifier of the doctor",
